@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from entity.concreteProduct_Clang_Tidy import Case_Clang_Tidy, Checker_Clang_Tidy, Rule_Clang_Tidy
 
 from entity.concreteProduct_CodeQL import Case_CodeQL, Checker_CodeQL, Rule_CodeQL 
+from entity.concreteProduct_Semgrep import Case_Semgrep, Checker_Semgrep, Rule_Semgrep
 from typing import List
 
 class Factory(ABC):
@@ -43,3 +44,17 @@ class Factory_CodeQL(Factory):
         return Rule_CodeQL()
     def __str__(self):
         return f"Factory_CodeQL."
+
+
+class Factory_Semgrep(Factory):
+    def create_case(self) -> Case_Semgrep:
+        return Case_Semgrep()
+
+    def create_checker(self) -> Checker_Semgrep:
+        return Checker_Semgrep()
+
+    def create_rule(self) -> Rule_Semgrep:
+        return Rule_Semgrep()
+
+    def __str__(self):
+        return f"Factory_Semgrep."
