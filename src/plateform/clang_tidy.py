@@ -93,7 +93,7 @@ def run_Checker_with_Check_clang_tidy(
     在**当前工作目录**下，直接运行 test_check_clang_tidy.py，
     所有参数均用绝对路径，不调用 os.chdir。
     """
-    # include_dir = include_dir or "/root/cw-base/clang-tools-extra/test/clang-tidy/checkers/abseil"
+    # include_dir = include_dir or "./code_check/llvm-project/clang-tools-extra/test/clang-tidy/checkers/abseil"
     log_name = log_name or f"{rule_name}-test.log"
 
     cmd = [
@@ -217,13 +217,13 @@ if __name__ == "__main__":
     #       运行此脚本前，请确保已安装clang-tidy和相关依赖。
     #       该脚本将生成或删除指定的Checker模板。
     #       如果需要进一步的功能或修改，请根据实际需求调整脚本。
-    # runChecker(checker_name='ucassaat-no-register-var-202428015029027',testCase_path=['/root/cw-base/cw3-tests/no-register-var-202428015029027.c'])
+    # runChecker(checker_name='ucassaat-no-register-var-202428015029027',testCase_path=['./code_check/cw3-tests/no-register-var-202428015029027.c'])
 
     #构建MetaOperation
-    # BASE = "/root/cw-base/clang-tools-extra/test/clang-tidy"
+    # BASE = "./code_check/llvm-project/clang-tools-extra/test/clang-tidy"
     # pre_Generate_Checker_Template(checker_name="meta-operation-sample")
     # compiler_clang_tidy()
-    # /root/cw-base/clang-tools-extra/test/clang-tidy/checkers/ucassaat/no-setjmp-or-longjmp-202428015029027.cpp
+    # ./code_check/llvm-project/clang-tools-extra/test/clang-tidy/checkers/ucassaat/no-setjmp-or-longjmp-202428015029027.cpp
 
-    # run_Checker_with_Check_clang_tidy(checker_cpp="/root/cw-base/clang-tools-extra/test/clang-tidy/checkers/ucassaat/meta-operation-sample.cpp",rule_name="ucassaat-meta-operation-sample",temp_dir="/root/cw-base/clang-tools-extra/test/clang-tidy/checkers/ucassaat/tmp/tmp-meta-operation-sample",include_dir=f"{BASE}/checkers/ucassaat")
-    # run_Checker_with_Check_clang_tidy(checker_cpp="/root/cw-base/clang-tools-extra/test/clang-tidy/checkers/cppcoreguidelines/virtual-class-destructor.cpp",rule_name="ucassaat-meta-operation-sample",temp_dir="/root/cw-base/clang-tools-extra/test/clang-tidy/checkers/ucassaat/tmp/tmp-meta-operation-sample",include_dir=f"{BASE}/checkers/ucassaat")
+    # run_Checker_with_Check_clang_tidy(checker_cpp="./code_check/llvm-project/clang-tools-extra/test/clang-tidy/checkers/ucassaat/meta-operation-sample.cpp",rule_name="ucassaat-meta-operation-sample",temp_dir="./code_check/llvm-project/clang-tools-extra/test/clang-tidy/checkers/ucassaat/tmp/tmp-meta-operation-sample",include_dir=f"{BASE}/checkers/ucassaat")
+    # run_Checker_with_Check_clang_tidy(checker_cpp="./code_check/llvm-project/clang-tools-extra/test/clang-tidy/checkers/cppcoreguidelines/virtual-class-destructor.cpp",rule_name="ucassaat-meta-operation-sample",temp_dir="./code_check/llvm-project/clang-tools-extra/test/clang-tidy/checkers/ucassaat/tmp/tmp-meta-operation-sample",include_dir=f"{BASE}/checkers/ucassaat")

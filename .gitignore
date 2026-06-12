@@ -34,6 +34,9 @@ temp_test_dir/
 semgrep_prompt/demo/
 semgrep_prompt/v1_output/
 semgrep_prompt/demo_output/
+semgrep_prompt/project_scan_queue/
+semgrep_prompt/rule_review*/
+semgrep_prompt/reports/
 semgrep_collect/collect_semgrep_rule_api/out/
 semgrep_collect/collect_semgrep_rule_api/out_fine/
 local_reports/
@@ -62,6 +65,12 @@ src/embedding_db/
 src/retriever/vector_db/
 src/retriever/embedding_model/
 
+# Generated sample corpora
+semgrep_prompt/testcase/autochecker/
+semgrep_prompt/testcase/generated/
+semgrep_prompt/testcase/generated_probe/
+semgrep_prompt/testcase/guardian/
+
 # IDE and OS files
 .DS_Store
 .vscode/
@@ -72,3 +81,7 @@ src/retriever/embedding_model/
 # Generated rule files
 *.yaml
 *.yml
+!semgrep_prompt/rules/**/*.yaml
+!semgrep_prompt/rules/**/*.yml
+semgrep_prompt/v1/collect_rule_library.py
+semgrep_prompt/v1/run_paired_dataset_batch.py
