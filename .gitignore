@@ -38,6 +38,7 @@ codeql-linux64.zip
 *.swp
 *.swo
 .env
+.venv/
 *.yaml
 *.yml   
 
@@ -47,4 +48,4 @@ codeql-linux64.zip
 *.lib
 *.class
 *.pyc
-__pycache__/    
+__pycache__/
