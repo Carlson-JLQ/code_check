@@ -1,0 +1,1112 @@
+{
+  "metadata": {
+    "schema_version": "1.0",
+    "dataset": "csa_checker_metaop",
+    "llvm_revision": "ee779de847774cc935ec089ebb6185c790aedcf7",
+    "generated_at": "2026-08-07T13:16:29.537850+00:00",
+    "source_roots": [
+      "clang/lib/StaticAnalyzer/Checkers"
+    ],
+    "language": [
+      "c",
+      "cpp"
+    ],
+    "checker_count": 3,
+    "logic_unit_count": 18
+  },
+  "checkers": [
+    {
+      "id": "checker:7943746b9b88b9f628522043",
+      "implementation_class": "DivZeroChecker",
+      "summary": "DivZeroChecker filters division and remainder operations, constrains the denominator, reports definite zero division, optionally reports tainted-possibly-zero division, and advances analysis on the non-zero path.",
+      "analysis_mode": "path_sensitive",
+      "source_files": [
+        "clang/lib/StaticAnalyzer/Checkers/DivZeroChecker.cpp"
+      ],
+      "callbacks": [
+        {
+          "event": "check::PreStmt<BinaryOperator>",
+          "method": "DivZeroChecker::checkPreStmt"
+        }
+      ],
+      "frontends": [
+        {
+          "id": "frontend:24f41664ae12d8b1e7e5c63e",
+          "name": "DivZero",
+          "registration_function": "ento::registerDivZeroChecker",
+          "frontend_member": "DivideZeroChecker"
+        },
+        {
+          "id": "frontend:a217bdcbd076008225d3cdd1",
+          "name": "TaintedDiv",
+          "registration_function": "ento::registerTaintedDivChecker",
+          "frontend_member": "TaintedDivChecker"
+        }
+      ],
+      "state_traits": [],
+      "logic_units": [
+        {
+          "id": "metaop:89ad5c241397e9ec34da1e20",
+          "order": 1,
+          "kind": "entry_filter",
+          "meta_op": "Restrict checking to division and remainder operators, including compound assignment forms, and ignore non-scalar denominators.",
+          "callback_context": [
+            "DivZeroChecker::checkPreStmt"
+          ],
+          "applies_to_frontends": [
+            "frontend:24f41664ae12d8b1e7e5c63e",
+            "frontend:a217bdcbd076008225d3cdd1"
+          ],
+          "depends_on": [],
+          "behavior": {
+            "preconditions": [
+              "The current statement is a BinaryOperator pre-statement callback.",
+              "The operator is one of division, remainder, division assignment, or remainder assignment.",
+              "The right-hand side has scalar type."
+            ],
+            "state_reads": [],
+            "state_writes": [],
+            "transitions": [
+              "Return immediately when the operator is not a supported divide or remainder form.",
+              "Return immediately when the denominator expression is not scalar."
+            ],
+            "reports": []
+          },
+          "api_refs": [],
+          "meta_impl": "void DivZeroChecker::checkPreStmt(const BinaryOperator *B,\n                                  CheckerContext &C) const {\n  BinaryOperator::Opcode Op = B->getOpcode();\n  if (Op != BO_Div &&\n      Op != BO_Rem &&\n      Op != BO_DivAssign &&\n      Op != BO_RemAssign)\n    return;\n\n  if (!B->getRHS()->getType()->isScalarType())\n    return;",
+          "source_spans": [
+            {
+              "role": "callback_segment",
+              "symbol": "DivZeroChecker::checkPreStmt",
+              "file": "clang/lib/StaticAnalyzer/Checkers/DivZeroChecker.cpp",
+              "start_line": 82,
+              "end_line": 92
+            }
+          ]
+        },
+        {
+          "id": "metaop:914653be92c745eece103139",
+          "order": 2,
+          "kind": "value_modeling",
+          "meta_op": "Extract the denominator value and stop when it is not a defined symbolic value.",
+          "callback_context": [
+            "DivZeroChecker::checkPreStmt"
+          ],
+          "applies_to_frontends": [
+            "frontend:24f41664ae12d8b1e7e5c63e",
+            "frontend:a217bdcbd076008225d3cdd1"
+          ],
+          "depends_on": [
+            "metaop:89ad5c241397e9ec34da1e20"
+          ],
+          "behavior": {
+            "preconditions": [
+              "The operation has passed the division or remainder filter.",
+              "The denominator expression is scalar."
+            ],
+            "state_reads": [],
+            "state_writes": [],
+            "transitions": [
+              "Obtain the denominator SVal from the current state.",
+              "Convert the denominator to a DefinedSVal, and stop if that conversion fails."
+            ],
+            "reports": []
+          },
+          "api_refs": [],
+          "meta_impl": "  SVal Denom = C.getSVal(B->getRHS());\n  std::optional<DefinedSVal> DV = Denom.getAs<DefinedSVal>();\n\n  // Divide-by-undefined handled in the generic checking for uses of\n  // undefined values.\n  if (!DV)\n    return;",
+          "source_spans": [
+            {
+              "role": "callback_segment",
+              "symbol": "DivZeroChecker::checkPreStmt",
+              "file": "clang/lib/StaticAnalyzer/Checkers/DivZeroChecker.cpp",
+              "start_line": 94,
+              "end_line": 100
+            }
+          ]
+        },
+        {
+          "id": "metaop:4b65d6c4013438b35461d664",
+          "order": 3,
+          "kind": "constraint_reasoning",
+          "meta_op": "Split the current program state into zero and non-zero denominator branches using the constraint manager.",
+          "callback_context": [
+            "DivZeroChecker::checkPreStmt"
+          ],
+          "applies_to_frontends": [
+            "frontend:24f41664ae12d8b1e7e5c63e",
+            "frontend:a217bdcbd076008225d3cdd1"
+          ],
+          "depends_on": [
+            "metaop:914653be92c745eece103139"
+          ],
+          "behavior": {
+            "preconditions": [
+              "The denominator is a defined symbolic value."
+            ],
+            "state_reads": [
+              "Current program state from the checker context."
+            ],
+            "state_writes": [
+              "Derived non-zero and zero successor states."
+            ],
+            "transitions": [
+              "Ask the constraint manager to assume the denominator is both non-zero and zero.",
+              "Keep both resulting states for later reporting or continuation."
+            ],
+            "reports": []
+          },
+          "api_refs": [
+            {
+              "id": "api:46e36ffadcdcb4875da6758a",
+              "qualified_name": "clang::ento::CheckerContext::getConstraintManager"
+            },
+            {
+              "id": "api:bbdd8c910a6048ce5e673db9",
+              "qualified_name": "clang::ento::CheckerContext::getState"
+            },
+            {
+              "id": "api:a93fcaef6e5791ecadd07e91",
+              "qualified_name": "clang::ento::ConstraintManager::assumeDual"
+            }
+          ],
+          "meta_impl": "  // Check for divide by zero.\n  ConstraintManager &CM = C.getConstraintManager();\n  ProgramStateRef stateNotZero, stateZero;\n  std::tie(stateNotZero, stateZero) = CM.assumeDual(C.getState(), *DV);",
+          "source_spans": [
+            {
+              "role": "callback_segment",
+              "symbol": "DivZeroChecker::checkPreStmt",
+              "file": "clang/lib/StaticAnalyzer/Checkers/DivZeroChecker.cpp",
+              "start_line": 102,
+              "end_line": 105
+            }
+          ]
+        },
+        {
+          "id": "metaop:880edb5f48efae3ad53c5999",
+          "order": 4,
+          "kind": "reporting",
+          "meta_op": "Emit a division-by-zero bug report when the denominator can only be zero.",
+          "callback_context": [
+            "DivZeroChecker::checkPreStmt"
+          ],
+          "applies_to_frontends": [
+            "frontend:24f41664ae12d8b1e7e5c63e",
+            "frontend:a217bdcbd076008225d3cdd1"
+          ],
+          "depends_on": [
+            "metaop:4b65d6c4013438b35461d664"
+          ],
+          "behavior": {
+            "preconditions": [
+              "The zero-denominator branch exists.",
+              "The non-zero-denominator branch does not exist."
+            ],
+            "state_reads": [],
+            "state_writes": [],
+            "transitions": [
+              "Create a bug report for the zero state.",
+              "Stop analysis on this path after reporting."
+            ],
+            "reports": [
+              "Division by zero"
+            ]
+          },
+          "api_refs": [],
+          "meta_impl": "  if (!stateNotZero) {\n    assert(stateZero);\n    reportBug(\"Division by zero\", stateZero, C);\n    return;\n  }\n\nvoid DivZeroChecker::reportBug(StringRef Msg, ProgramStateRef StateZero,\n                               CheckerContext &C) const {\n  if (!DivideZeroChecker.isEnabled())\n    return;\n  if (ExplodedNode *N = C.generateErrorNode(StateZero)) {\n    auto R =\n        std::make_unique<PathSensitiveBugReport>(DivideZeroChecker, Msg, N);\n    bugreporter::trackExpressionValue(N, getDenomExpr(N), *R);\n    C.emitReport(std::move(R));\n  }\n}",
+          "source_spans": [
+            {
+              "role": "callback_segment",
+              "symbol": "DivZeroChecker::checkPreStmt",
+              "file": "clang/lib/StaticAnalyzer/Checkers/DivZeroChecker.cpp",
+              "start_line": 107,
+              "end_line": 111
+            },
+            {
+              "role": "callback_segment",
+              "symbol": "DivZeroChecker::reportBug",
+              "file": "clang/lib/StaticAnalyzer/Checkers/DivZeroChecker.cpp",
+              "start_line": 55,
+              "end_line": 65
+            }
+          ]
+        },
+        {
+          "id": "metaop:b62dac122f1fea84e8ea400d",
+          "order": 5,
+          "kind": "reporting",
+          "meta_op": "Emit a tainted division warning when the denominator may be zero and is influenced by tainted symbols.",
+          "callback_context": [
+            "DivZeroChecker::checkPreStmt"
+          ],
+          "applies_to_frontends": [
+            "frontend:24f41664ae12d8b1e7e5c63e",
+            "frontend:a217bdcbd076008225d3cdd1"
+          ],
+          "depends_on": [
+            "metaop:4b65d6c4013438b35461d664"
+          ],
+          "behavior": {
+            "preconditions": [
+              "Both zero and non-zero denominator states exist.",
+              "At least one tainted symbol is associated with the denominator value."
+            ],
+            "state_reads": [
+              "Current program state from the checker context."
+            ],
+            "state_writes": [],
+            "transitions": [
+              "Collect tainted symbols for the denominator value.",
+              "Generate a bug report on the zero state.",
+              "Mark each tainted symbol as interesting in the report."
+            ],
+            "reports": [
+              "Division by a tainted value, possibly zero"
+            ]
+          },
+          "api_refs": [],
+          "meta_impl": "  if ((stateNotZero && stateZero)) {\n    std::vector<SymbolRef> taintedSyms = getTaintedSymbols(C.getState(), *DV);\n    if (!taintedSyms.empty()) {\n      reportTaintBug(\"Division by a tainted value, possibly zero\", stateZero, C,\n                     taintedSyms);\n      // Fallthrough to continue analysis in case of non-zero denominator.\n    }\n  }\n\nvoid DivZeroChecker::reportTaintBug(\n    StringRef Msg, ProgramStateRef StateZero, CheckerContext &C,\n    llvm::ArrayRef<SymbolRef> TaintedSyms) const {\n  if (!TaintedDivChecker.isEnabled())\n    return;\n  if (ExplodedNode *N = C.generateErrorNode(StateZero)) {\n    auto R =\n        std::make_unique<PathSensitiveBugReport>(TaintedDivChecker, Msg, N);\n    bugreporter::trackExpressionValue(N, getDenomExpr(N), *R);\n    for (auto Sym : TaintedSyms)\n      R->markInteresting(Sym);\n    C.emitReport(std::move(R));\n  }\n}",
+          "source_spans": [
+            {
+              "role": "callback_segment",
+              "symbol": "DivZeroChecker::checkPreStmt",
+              "file": "clang/lib/StaticAnalyzer/Checkers/DivZeroChecker.cpp",
+              "start_line": 113,
+              "end_line": 120
+            },
+            {
+              "role": "callback_segment",
+              "symbol": "DivZeroChecker::reportTaintBug",
+              "file": "clang/lib/StaticAnalyzer/Checkers/DivZeroChecker.cpp",
+              "start_line": 67,
+              "end_line": 80
+            }
+          ]
+        },
+        {
+          "id": "metaop:b8c055c64848fda17d0f8e5f",
+          "order": 6,
+          "kind": "state_transition",
+          "meta_op": "Advance analysis only along the non-zero denominator branch after any reporting decisions.",
+          "callback_context": [
+            "DivZeroChecker::checkPreStmt"
+          ],
+          "applies_to_frontends": [
+            "frontend:24f41664ae12d8b1e7e5c63e",
+            "frontend:a217bdcbd076008225d3cdd1"
+          ],
+          "depends_on": [
+            "metaop:4b65d6c4013438b35461d664",
+            "metaop:880edb5f48efae3ad53c5999",
+            "metaop:b62dac122f1fea84e8ea400d"
+          ],
+          "behavior": {
+            "preconditions": [
+              "A non-zero denominator successor state exists."
+            ],
+            "state_reads": [],
+            "state_writes": [
+              "Checker exploration continues with the non-zero successor state."
+            ],
+            "transitions": [
+              "Abandon the zero-denominator branch.",
+              "Add the non-zero state as the outgoing transition."
+            ],
+            "reports": []
+          },
+          "api_refs": [
+            {
+              "id": "api:2669ca957a0ccf39ad92c422",
+              "qualified_name": "clang::ento::CheckerContext::addTransition"
+            }
+          ],
+          "meta_impl": "  // If we get here, then the denom should not be zero. We abandon the implicit\n  // zero denom case for now.\n  C.addTransition(stateNotZero);\n}",
+          "source_spans": [
+            {
+              "role": "callback_segment",
+              "symbol": "DivZeroChecker::checkPreStmt",
+              "file": "clang/lib/StaticAnalyzer/Checkers/DivZeroChecker.cpp",
+              "start_line": 122,
+              "end_line": 125
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "checker:6e8ffa295564d2873b883c5c",
+      "implementation_class": "MallocChecker",
+      "summary": "Model dynamic-memory ownership to detect leaks, invalid frees, double frees, use-after-free, and tainted allocation sizes.",
+      "analysis_mode": "path_sensitive",
+      "source_files": [
+        "clang/lib/StaticAnalyzer/Checkers/MallocChecker.cpp"
+      ],
+      "callbacks": [
+        {
+          "event": "check::DeadSymbols",
+          "method": "MallocChecker::checkDeadSymbols"
+        },
+        {
+          "event": "check::PointerEscape",
+          "method": "MallocChecker::checkPointerEscape"
+        },
+        {
+          "event": "check::ConstPointerEscape",
+          "method": "MallocChecker::checkConstPointerEscape"
+        },
+        {
+          "event": "check::PreStmt<ReturnStmt>",
+          "method": "MallocChecker::checkPreStmt"
+        },
+        {
+          "event": "check::EndFunction",
+          "method": "MallocChecker::checkEndFunction"
+        },
+        {
+          "event": "check::PreCall",
+          "method": "MallocChecker::checkPreCall"
+        },
+        {
+          "event": "check::PostCall",
+          "method": "MallocChecker::checkPostCall"
+        },
+        {
+          "event": "eval::Call",
+          "method": "MallocChecker::evalCall"
+        },
+        {
+          "event": "check::NewAllocator",
+          "method": "MallocChecker::checkNewAllocator"
+        },
+        {
+          "event": "check::PostStmt<BlockExpr>",
+          "method": "MallocChecker::checkPostStmt"
+        },
+        {
+          "event": "check::PostObjCMessage",
+          "method": "MallocChecker::checkPostObjCMessage"
+        },
+        {
+          "event": "check::Location",
+          "method": "MallocChecker::checkLocation"
+        },
+        {
+          "event": "eval::Assume",
+          "method": "MallocChecker::evalAssume"
+        }
+      ],
+      "frontends": [
+        {
+          "id": "frontend:06f69d363efa4ce08f748e88",
+          "name": "Malloc",
+          "registration_function": "ento::registerMallocChecker",
+          "frontend_member": "MallocChecker"
+        },
+        {
+          "id": "frontend:adb829186e42f7350171e28e",
+          "name": "NewDelete",
+          "registration_function": "ento::registerNewDeleteChecker",
+          "frontend_member": "NewDeleteChecker"
+        },
+        {
+          "id": "frontend:6d020c6bb3d198f9e93fbc02",
+          "name": "NewDeleteLeaks",
+          "registration_function": "ento::registerNewDeleteLeaksChecker",
+          "frontend_member": "NewDeleteLeaksChecker"
+        },
+        {
+          "id": "frontend:57d20d71e6adfd69d4ec7b73",
+          "name": "MismatchedDeallocator",
+          "registration_function": "ento::registerMismatchedDeallocatorChecker",
+          "frontend_member": "MismatchedDeallocatorChecker"
+        },
+        {
+          "id": "frontend:fbf7126932cb777361353b6d",
+          "name": "TaintedAlloc",
+          "registration_function": "ento::registerTaintedAllocChecker",
+          "frontend_member": "TaintedAllocChecker"
+        }
+      ],
+      "state_traits": [
+        {
+          "name": "RegionState",
+          "kind": "map",
+          "key_type": "SymbolRef",
+          "value_type": "RefState",
+          "file": "clang/lib/StaticAnalyzer/Checkers/MallocChecker.cpp"
+        },
+        {
+          "name": "ReallocSizeZeroSymbols",
+          "kind": "set",
+          "key_type": "SymbolRef",
+          "value_type": null,
+          "file": "clang/lib/StaticAnalyzer/Checkers/MallocChecker.cpp"
+        },
+        {
+          "name": "ReallocPairs",
+          "kind": "map",
+          "key_type": "SymbolRef",
+          "value_type": "ReallocPair",
+          "file": "clang/lib/StaticAnalyzer/Checkers/MallocChecker.cpp"
+        },
+        {
+          "name": "FreeReturnValue",
+          "kind": "map",
+          "key_type": "SymbolRef",
+          "value_type": "SymbolRef",
+          "file": "clang/lib/StaticAnalyzer/Checkers/MallocChecker.cpp"
+        }
+      ],
+      "logic_units": [
+        {
+          "id": "metaop:97f65925f14ff701701ae673",
+          "order": 1,
+          "kind": "entry_filter",
+          "meta_op": "Dispatch recognized deallocation and allocation calls to checker-local models.",
+          "callback_context": [
+            "MallocChecker::checkPreCall"
+          ],
+          "applies_to_frontends": [
+            "frontend:06f69d363efa4ce08f748e88",
+            "frontend:adb829186e42f7350171e28e",
+            "frontend:6d020c6bb3d198f9e93fbc02",
+            "frontend:57d20d71e6adfd69d4ec7b73",
+            "frontend:fbf7126932cb777361353b6d"
+          ],
+          "depends_on": [],
+          "behavior": {
+            "preconditions": [],
+            "state_reads": [],
+            "state_writes": [],
+            "transitions": [],
+            "reports": []
+          },
+          "api_refs": [],
+          "meta_impl": "void MallocChecker::checkPreCall(const CallEvent &Call,\n                                 CheckerContext &C) const {\n\n  if (const auto *DC = dyn_cast<CXXDeallocatorCall>(&Call)) {\n    const CXXDeleteExpr *DE = DC->getOriginExpr();\n\n    // FIXME: I don't see a good reason for restricting the check against\n    // use-after-free violations to the case when NewDeleteChecker is disabled.\n    // (However, if NewDeleteChecker is enabled, perhaps it would be better to\n    // do this check a bit later?)\n    if (!NewDeleteChecker.isEnabled())\n      if (SymbolRef Sym = C.getSVal(DE->getArgument()).getAsSymbol())\n        checkUseAfterFree(Sym, C, DE->getArgument());\n\n    if (!isStandardNewDelete(DC->getDecl()))\n      return;\n\n    ProgramStateRef State = C.getState();\n    bool IsKnownToBeAllocated;\n    State = FreeMemAux(\n        C, DE->getArgument(), Call, State,\n        /*Hold*/ false, IsKnownToBeAllocated,\n        AllocationFamily(DE->isArrayForm() ? AF_CXXNewArray : AF_CXXNew));\n\n    C.addTransition(State);\n    return;\n  }",
+          "source_spans": [
+            {
+              "role": "callback_segment",
+              "symbol": "MallocChecker::checkPreCall",
+              "file": "clang/lib/StaticAnalyzer/Checkers/MallocChecker.cpp",
+              "start_line": 3445,
+              "end_line": 3471
+            }
+          ]
+        },
+        {
+          "id": "metaop:ab94c1766baa204d15b85804",
+          "order": 2,
+          "kind": "state_modeling",
+          "meta_op": "Bind a newly allocated symbol and record its allocation family in RegionState.",
+          "callback_context": [
+            "MallocChecker::checkPostCall",
+            "MallocChecker::checkNewAllocator"
+          ],
+          "applies_to_frontends": [
+            "frontend:06f69d363efa4ce08f748e88",
+            "frontend:adb829186e42f7350171e28e",
+            "frontend:fbf7126932cb777361353b6d"
+          ],
+          "depends_on": [],
+          "behavior": {
+            "preconditions": [],
+            "state_reads": [],
+            "state_writes": [
+              "RegionState[allocation symbol] = allocated"
+            ],
+            "transitions": [
+              "allocation state"
+            ],
+            "reports": []
+          },
+          "api_refs": [
+            {
+              "id": "api:1523abd1f161565ea1668250",
+              "qualified_name": "clang::ento::ProgramState::set"
+            }
+          ],
+          "meta_impl": "ProgramStateRef MallocChecker::MallocMemAux(CheckerContext &C,\n                                            const CallEvent &Call, SVal Size,\n                                            SVal Init, ProgramStateRef State,\n                                            AllocationFamily Family) const {\n  if (!State)\n    return nullptr;\n\n  const Expr *CE = Call.getOriginExpr();\n\n  // We expect the malloc functions to return a pointer.\n  // Should have been already checked.\n  assert(Loc::isLocType(CE->getType()) &&\n         \"Allocation functions must return a pointer\");\n\n  const StackFrame *SF = C.getPredecessor()->getStackFrame();\n  SVal RetVal = State->getSVal(CE, C.getStackFrame());\n\n  // Fill the region with the initialization value.\n  // FIXME: Why use stack frame of the predecessor?\n  State = State->bindDefaultInitial(RetVal, Init, SF);\n\n  // If Size is somehow undefined at this point, this line prevents a crash.\n  if (Size.isUndef())\n    Size = UnknownVal();\n\n  checkTaintedness(C, Call, Size, State, AllocationFamily(AF_Malloc));\n\n  // Set the region's extent.\n  State = setDynamicExtent(State, RetVal.getAsRegion(),\n                           Size.castAs<DefinedOrUnknownSVal>());\n\n  return MallocUpdateRefState(C, CE, State, Family);\n}\n\nProgramStateRef\nMallocChecker::FailedAlloc(CheckerContext &C, const CallEvent &Call,\n                           ProgramStateRef State,\n                           llvm::ArrayRef<unsigned> SizeArgIndexes) const {\n  if (!State || !ModelAllocationFailure)\n    return nullptr;\n\n  for (unsigned SizeArgI : SizeArgIndexes) {\n    auto DefArgVal = Call.getArgSVal(SizeArgI).getAs<DefinedOrUnknownSVal>();\n    if (!DefArgVal)\n      return nullptr;\n    State = State->assume(*DefArgVal, true);\n    if (!State)\n      return nullptr;\n  }\n\n  auto RetVal = State->getSVal(Call.getOriginExpr(), C.getStackFrame())\n                    .castAs<DefinedOrUnknownSVal>();\n  return State->assume(RetVal, false);\n}\n\nstatic ProgramStateRef MallocUpdateRefState(CheckerContext &C, const Expr *E,\n                                            ProgramStateRef State,\n                                            AllocationFamily Family,\n                                            std::optional<SVal> RetVal) {\n  if (!State)\n    return nullptr;\n\n  // Get the return value.\n  if (!RetVal)\n    RetVal = State->getSVal(E, C.getStackFrame());\n\n  // We expect the malloc functions to return a pointer.\n  if (!RetVal->getAs<Loc>())\n    return nullptr;\n\n  SymbolRef Sym = RetVal->getAsLocSymbol();\n\n  // NOTE: If this was an `alloca()` call, then `RetVal` holds an\n  // `AllocaRegion`, so `Sym` will be a nullpointer because `AllocaRegion`s do\n  // not have an associated symbol. However, this distinct region type means\n  // that we don't need to store anything about them in `RegionState`.\n\n  if (Sym)\n    return State->set<RegionState>(Sym, RefState::getAllocated(Family, E));\n\n  return State;",
+          "source_spans": [
+            {
+              "role": "helper",
+              "symbol": "MallocChecker::MallocMemAux",
+              "file": "clang/lib/StaticAnalyzer/Checkers/MallocChecker.cpp",
+              "start_line": 2060,
+              "end_line": 2140
+            }
+          ]
+        },
+        {
+          "id": "metaop:755cd4eed00d6aa938b1493d",
+          "order": 3,
+          "kind": "state_transition",
+          "meta_op": "Validate a deallocation and mark the released symbol in RegionState.",
+          "callback_context": [
+            "MallocChecker::checkPreCall"
+          ],
+          "applies_to_frontends": [
+            "frontend:06f69d363efa4ce08f748e88",
+            "frontend:adb829186e42f7350171e28e",
+            "frontend:57d20d71e6adfd69d4ec7b73"
+          ],
+          "depends_on": [
+            "metaop:97f65925f14ff701701ae673"
+          ],
+          "behavior": {
+            "preconditions": [],
+            "state_reads": [
+              "RegionState[released symbol]"
+            ],
+            "state_writes": [
+              "RegionState[released symbol] = released"
+            ],
+            "transitions": [],
+            "reports": []
+          },
+          "api_refs": [
+            {
+              "id": "api:1523abd1f161565ea1668250",
+              "qualified_name": "clang::ento::ProgramState::set"
+            },
+            {
+              "id": "api:580faeb0c4c90b1b2c353a9c",
+              "qualified_name": "clang::ento::ProgramState::get"
+            }
+          ],
+          "meta_impl": "MallocChecker::FreeMemAux(CheckerContext &C, const Expr *ArgExpr,\n                          const CallEvent &Call, ProgramStateRef State,\n                          bool Hold, bool &IsKnownToBeAllocated,\n                          AllocationFamily Family, bool ReturnsNullOnFailure,\n                          std::optional<SVal> ArgValOpt) const {\n\n  if (!State)\n    return nullptr;\n\n  SVal ArgVal = ArgValOpt.value_or(C.getSVal(ArgExpr));\n  if (!isa<DefinedOrUnknownSVal>(ArgVal))\n    return nullptr;\n  DefinedOrUnknownSVal location = ArgVal.castAs<DefinedOrUnknownSVal>();\n\n  // Check for null dereferences.\n  if (!isa<Loc>(location))\n    return nullptr;\n\n  // The explicit NULL case, no operation is performed.\n  ProgramStateRef notNullState, nullState;\n  std::tie(notNullState, nullState) = State->assume(location);\n  if (nullState && !notNullState)\n    return nullptr;\n\n  // Unknown values could easily be okay\n  // Undefined values are handled elsewhere\n  if (ArgVal.isUnknownOrUndef())\n    return nullptr;\n\n  const MemRegion *R = ArgVal.getAsRegion();\n  const Expr *ParentExpr = Call.getOriginExpr();\n\n  // NOTE: We detected a bug, but the checker under whose name we would emit the\n  // error could be disabled. Generally speaking, the MallocChecker family is an\n  // integral part of the Static Analyzer, and disabling any part of it should\n  // only be done under exceptional circumstances, such as frequent false\n  // positives. If this is the case, we can reasonably believe that there are\n  // serious faults in our understanding of the source code, and even if we\n  // don't emit an warning, we should terminate further analysis with a sink\n  // node.\n\n  // Nonlocs can't be freed, of course.\n  // Non-region locations (labels and fixed addresses) also shouldn't be freed.\n  if (!R) {\n    // Exception:\n    // If the macro ZERO_SIZE_PTR is defined, this could be a kernel source\n    // code. In that case, the ZERO_SIZE_PTR defines a special value used for a\n    // zero-sized memory block which is allowed to be freed, despite not being a\n    // null pointer.\n    if (Family.Kind != AF_Malloc || !isArgZERO_SIZE_PTR(State, C, ArgVal))\n      HandleNonHeapDealloc(C, ArgVal, ArgExpr->getSourceRange(), ParentExpr,\n                           Family);\n    return nullptr;\n  }\n\n  R = R->StripCasts();\n\n  // Blocks might show up as heap data, but should not be free()d\n  if (isa<BlockDataRegion>(R)) {\n    HandleNonHeapDealloc(C, ArgVal, ArgExpr->getSourceRange(), ParentExpr,\n                         Family);\n    return nullptr;\n  }\n\n  // Parameters, locals, statics, globals, and memory returned by\n  // __builtin_alloca() shouldn't be freed.\n  if (!R->hasMemorySpace<UnknownSpaceRegion, HeapSpaceRegion>(State)) {\n    // Regions returned by malloc() are represented by SymbolicRegion objects\n    // within HeapSpaceRegion. Of course, free() can work on memory allocated\n    // outside the current function, so UnknownSpaceRegion is also a\n    // possibility here.\n\n    if (isa<AllocaRegion>(R))\n      HandleFreeAlloca(C, ArgVal, ArgExpr->getSourceRange());\n    else\n      HandleNonHeapDealloc(C, ArgVal, ArgExpr->getSourceRange(), ParentExpr,\n                           Family);\n\n    return nullptr;\n  }\n\n  const SymbolicRegion *SrBase = dyn_cast<SymbolicRegion>(R->getBaseRegion());\n  // Various cases could lead to non-symbol values here.\n  // For now, ignore them.\n  if (!SrBase)\n    return nullptr;\n\n  SymbolRef SymBase = SrBase->getSymbol();\n  const RefState *RsBase = State->get<RegionState>(SymBase);\n  SymbolRef PreviousRetStatusSymbol = nullptr;\n\n  IsKnownToBeAllocated =\n      RsBase && (RsBase->isAllocated() || RsBase->isAllocatedOfSizeZero());\n\n  if (RsBase) {\n\n    // Memory returned by alloca() shouldn't be freed.\n    if (RsBase->getAllocationFamily().Kind == AF_Alloca) {\n      HandleFreeAlloca(C, ArgVal, ArgExpr->getSourceRange());\n      return nullptr;\n    }\n\n    // Check for double free first.\n    if ((RsBase->isReleased() || RsBase->isRelinquished()) &&\n        !didPreviousFreeFail(State, SymBase, PreviousRetStatusSymbol)) {\n      HandleDoubleFree(C, ParentExpr->getSourceRange(), RsBase->isReleased(),\n                       SymBase, PreviousRetStatusSymbol);\n      return nullptr;\n    }\n\n    // If the pointer is allocated or escaped, but we are now trying to free it,\n    // check that the call to free is proper.\n    if (RsBase->isAllocated() || RsBase->isAllocatedOfSizeZero() ||\n        RsBase->isEscaped()) {\n\n      // Check if an expected deallocation function matches the real one.\n      bool DeallocMatchesAlloc = RsBase->getAllocationFamily() == Family;\n      if (!DeallocMatchesAlloc) {\n        HandleMismatchedDealloc(C, ArgExpr->getSourceRange(), ParentExpr,\n                                RsBase, SymBase, Hold);\n        return nullptr;\n      }\n\n      // Check if the memory location being freed is the actual location\n      // allocated, or an offset.\n      RegionOffset Offset = R->getAsOffset();\n      if (Offset.isValid() &&\n          !Offset.hasSymbolicOffset() &&\n          Offset.getOffset() != 0) {\n        const Expr *AllocExpr = cast<Expr>(RsBase->getStmt());\n        HandleOffsetFree(C, ArgVal, ArgExpr->getSourceRange(), ParentExpr,\n                         Family, AllocExpr);\n        return nullptr;\n      }\n    }\n  }\n\n  if (SymBase->getType()->isFunctionPointerType()) {\n    HandleFunctionPtrFree(C, ArgVal, ArgExpr->getSourceRange(), ParentExpr,\n                          Family);\n    return nullptr;\n  }\n\n  // Clean out the info on previous call to free return info.\n  State = State->remove<FreeReturnValue>(SymBase);\n\n  // Keep track of the return value. If it is NULL, we will know that free\n  // failed.\n  if (ReturnsNullOnFailure) {\n    SVal RetVal = C.getSVal(ParentExpr);\n    SymbolRef RetStatusSymbol = RetVal.getAsSymbol();\n    if (RetStatusSymbol) {\n      C.getSymbolManager().addSymbolDependency(SymBase, RetStatusSymbol);\n      State = State->set<FreeReturnValue>(SymBase, RetStatusSymbol);\n    }\n  }\n\n  // If we don't know anything about this symbol, a free on it may be totally\n  // valid. If this is the case, lets assume that the allocation family of the\n  // freeing function is the same as the symbols allocation family, and go with\n  // that.\n  assert(!RsBase || (RsBase && RsBase->getAllocationFamily() == Family));\n\n  // Assume that after memory is freed, it contains unknown values. This\n  // conforts languages standards, since reading from freed memory is considered\n  // UB and may result in arbitrary value.\n  State = State->invalidateRegions({location}, Call.getCFGElementRef(),\n                                   C.blockCount(), C.getStackFrame(),\n                                   /*CausesPointerEscape=*/false,\n                                   /*InvalidatedSymbols=*/nullptr);\n\n  // Normal free.\n  if (Hold)\n    return State->set<RegionState>(SymBase,\n                                   RefState::getRelinquished(Family,\n                                                             ParentExpr));\n\n  return State->set<RegionState>(SymBase,\n                                 RefState::getReleased(Family, ParentExpr));\n}\n\ntemplate <class T>\nconst T *MallocChecker::getRelevantFrontendAs(AllocationFamily Family) const {\n  switch (Family.Kind) {\n  case AF_Malloc:\n  case AF_Alloca:\n  case AF_Custom:\n  case AF_IfNameIndex:\n    return MallocChecker.getAs<T>();\n  case AF_CXXNew:\n  case AF_CXXNewArray: {\n    const T *ND = NewDeleteChecker.getAs<T>();\n    const T *NDL = NewDeleteLeaksChecker.getAs<T>();\n    // Bugs corresponding to C++ new/delete allocations are split between these\n    // two frontends.\n    if constexpr (std::is_same_v<T, CheckerFrontend>) {\n      assert(ND && NDL && \"Casting to CheckerFrontend always succeeds\");\n      // Prefer NewDelete unless it's disabled and NewDeleteLeaks is enabled.\n      return (!ND->isEnabled() && NDL->isEnabled()) ? NDL : ND;\n    }\n    assert(!(ND && NDL) &&\n           \"NewDelete and NewDeleteLeaks must not share a bug type\");\n    return ND ? ND : NDL;\n  }\n  case AF_InnerBuffer:\n    return InnerPointerChecker.getAs<T>();\n  case AF_None:\n    assert(false && \"no family\");\n    return nullptr;\n  }\n  assert(false && \"unhandled family\");\n  return nullptr;\n}\ntemplate <class T>\nconst T *MallocChecker::getRelevantFrontendAs(CheckerContext &C,\n                                              SymbolRef Sym) const {\n  if (C.getState()->contains<ReallocSizeZeroSymbols>(Sym))\n    return MallocChecker.getAs<T>();\n\n  const RefState *RS = C.getState()->get<RegionState>(Sym);\n  assert(RS);\n  return getRelevantFrontendAs<T>(RS->getAllocationFamily());\n}\n\nbool MallocChecker::SummarizeValue(raw_ostream &os, SVal V) {\n  if (std::optional<nonloc::ConcreteInt> IntVal =\n          V.getAs<nonloc::ConcreteInt>())\n    os << \"an integer (\" << IntVal->getValue() << \")\";\n  else if (std::optional<loc::ConcreteInt> ConstAddr =\n               V.getAs<loc::ConcreteInt>())\n    os << \"a constant address (\" << ConstAddr->getValue() << \")\";\n  else if (std::optional<loc::GotoLabel> Label = V.getAs<loc::GotoLabel>())\n    os << \"the address of the label '\" << Label->getLabel()->getName() << \"'\";\n  else\n    return false;\n\n  return true;\n}\n\nbool MallocChecker::SummarizeRegion(ProgramStateRef State, raw_ostream &os,\n                                    const MemRegion *MR) {\n  switch (MR->getKind()) {\n  case MemRegion::FunctionCodeRegionKind: {\n    const NamedDecl *FD = cast<FunctionCodeRegion>(MR)->getDecl();\n    if (FD)\n      os << \"the address of the function '\" << *FD << '\\'';\n    else\n      os << \"the address of a function\";\n    return true;\n  }\n  case MemRegion::BlockCodeRegionKind:\n    os << \"block text\";\n    return true;\n  case MemRegion::BlockDataRegionKind:\n    // FIXME: where the block came from?\n    os << \"a block\";\n    return true;\n  default: {\n    const MemSpaceRegion *MS = MR->getMemorySpace(State);\n\n    if (isa<StackLocalsSpaceRegion>(MS)) {\n      const VarRegion *VR = dyn_cast<VarRegion>(MR);\n      const VarDecl *VD;\n      if (VR)\n        VD = VR->getDecl();\n      else\n        VD = nullptr;\n\n      if (VD)\n        os << \"the address of the local variable '\" << VD->getName() << \"'\";\n      else\n        os << \"the address of a local stack variable\";\n      return true;\n    }\n\n    if (isa<StackArgumentsSpaceRegion>(MS)) {\n      const VarRegion *VR = dyn_cast<VarRegion>(MR);\n      const VarDecl *VD;\n      if (VR)\n        VD = VR->getDecl();\n      else\n        VD = nullptr;\n\n      if (VD)\n        os << \"the address of the parameter '\" << VD->getName() << \"'\";\n      else\n        os << \"the address of a parameter\";\n      return true;\n    }\n\n    if (isa<GlobalsSpaceRegion>(MS)) {\n      const VarRegion *VR = dyn_cast<VarRegion>(MR);\n      const VarDecl *VD;\n      if (VR)\n        VD = VR->getDecl();\n      else\n        VD = nullptr;\n\n      if (VD) {\n        if (VD->isStaticLocal())\n          os << \"the address of the static variable '\" << VD->getName() << \"'\";\n        else\n          os << \"the address of the global variable '\" << VD->getName() << \"'\";\n      } else\n        os << \"the address of a global variable\";\n      return true;\n    }\n\n    return false;\n  }\n  }\n}\n\nvoid MallocChecker::HandleNonHeapDealloc(CheckerContext &C, SVal ArgVal,\n                                         SourceRange Range,\n                                         const Expr *DeallocExpr,\n                                         AllocationFamily Family) const {\n  const BadFree *Frontend = getRelevantFrontendAs<BadFree>(Family);\n  if (!Frontend)\n    return;\n  if (!Frontend->isEnabled()) {\n    C.addSink();\n    return;\n  }\n\n  if (ExplodedNode *N = C.generateErrorNode()) {\n    SmallString<100> buf;\n    llvm::raw_svector_ostream os(buf);\n\n    const MemRegion *MR = ArgVal.getAsRegion();\n    while (const ElementRegion *ER = dyn_cast_or_null<ElementRegion>(MR))\n      MR = ER->getSuperRegion();\n\n    os << \"Argument to \";\n    if (!printMemFnName(os, C, DeallocExpr))\n      os << \"deallocator\";\n\n    os << \" is \";\n    bool Summarized =\n        MR ? SummarizeRegion(C.getState(), os, MR) : SummarizeValue(os, ArgVal);\n    if (Summarized)\n      os << \", which is not memory allocated by \";\n    else\n      os << \"not memory allocated by \";\n\n    printExpectedAllocName(os, Family);\n\n    auto R = std::make_unique<PathSensitiveBugReport>(Frontend->BadFreeBug,\n                                                      os.str(), N);\n    R->markInteresting(MR);\n    R->addRange(Range);\n    C.emitReport(std::move(R));\n  }\n}\n\nvoid MallocChecker::HandleFreeAlloca(CheckerContext &C, SVal ArgVal,\n                                     SourceRange Range) const {\n  const FreeAlloca *Frontend;\n\n  if (MallocChecker.isEnabled())\n    Frontend = &MallocChecker;\n  else if (MismatchedDeallocatorChecker.isEnabled())\n    Frontend = &MismatchedDeallocatorChecker;\n  else {\n    C.addSink();\n    return;\n  }\n\n  if (ExplodedNode *N = C.generateErrorNode()) {\n    auto R = std::make_unique<PathSensitiveBugReport>(\n        Frontend->FreeAllocaBug,\n        \"Memory allocated by 'alloca()' should not be deallocated\", N);\n    R->markInteresting(ArgVal.getAsRegion());\n    R->addRange(Range);\n    C.emitReport(std::move(R));\n  }\n}\n\nvoid MallocChecker::HandleMismatchedDealloc(CheckerContext &C,\n                                            SourceRange Range,\n                                            const Expr *DeallocExpr,\n                                            const RefState *RS, SymbolRef Sym,\n                                            bool OwnershipTransferred) const {\n  if (!MismatchedDeallocatorChecker.isEnabled()) {\n    C.addSink();\n    return;\n  }\n\n  if (ExplodedNode *N = C.generateErrorNode()) {\n    SmallString<100> buf;\n    llvm::raw_svector_ostream os(buf);\n\n    const Expr *AllocExpr = cast<Expr>(RS->getStmt());\n    SmallString<20> AllocBuf;\n    llvm::raw_svector_ostream AllocOs(AllocBuf);\n    SmallString<20> DeallocBuf;\n    llvm::raw_svector_ostream DeallocOs(DeallocBuf);\n\n    if (OwnershipTransferred) {\n      if (printMemFnName(DeallocOs, C, DeallocExpr))\n        os << DeallocOs.str() << \" cannot\";\n      else\n        os << \"Cannot\";\n\n      os << \" take ownership of memory\";\n\n      if (printMemFnName(AllocOs, C, AllocExpr))\n        os << \" allocated by \" << AllocOs.str();\n    } else {\n      os << \"Memory\";\n      if (printMemFnName(AllocOs, C, AllocExpr))\n        os << \" allocated by \" << AllocOs.str();\n\n      os << \" should be deallocated by \";\n        printExpectedDeallocName(os, RS->getAllocationFamily());\n\n        if (printMemFnName(DeallocOs, C, DeallocExpr))\n          os << \", not \" << DeallocOs.str();\n\n        printOwnershipTakesList(os, C, DeallocExpr);\n    }\n\n    auto R = std::make_unique<PathSensitiveBugReport>(\n        MismatchedDeallocatorChecker.MismatchedDeallocBug, os.str(), N);\n    R->markInteresting(Sym);\n    R->addRange(Range);\n    R->addVisitor<MallocBugVisitor>(Sym);\n    C.emitReport(std::move(R));\n  }\n}\n\nvoid MallocChecker::HandleOffsetFree(CheckerContext &C, SVal ArgVal,\n                                     SourceRange Range, const Expr *DeallocExpr,\n                                     AllocationFamily Family,\n                                     const Expr *AllocExpr) const {\n  const OffsetFree *Frontend = getRelevantFrontendAs<OffsetFree>(Family);\n  if (!Frontend)\n    return;\n  if (!Frontend->isEnabled()) {\n    C.addSink();\n    return;\n  }\n\n  ExplodedNode *N = C.generateErrorNode();\n  if (!N)\n    return;\n\n  SmallString<100> buf;\n  llvm::raw_svector_ostream os(buf);\n  SmallString<20> AllocNameBuf;\n  llvm::raw_svector_ostream AllocNameOs(AllocNameBuf);\n\n  const MemRegion *MR = ArgVal.getAsRegion();\n  assert(MR && \"Only MemRegion based symbols can have offset free errors\");\n\n  RegionOffset Offset = MR->getAsOffset();\n  assert((Offset.isValid() &&\n          !Offset.hasSymbolicOffset() &&\n          Offset.getOffset() != 0) &&\n         \"Only symbols with a valid offset can have offset free errors\");\n\n  int offsetBytes = Offset.getOffset() / C.getASTContext().getCharWidth();\n\n  os << \"Argument to \";\n  if (!printMemFnName(os, C, DeallocExpr))\n    os << \"deallocator\";\n  os << \" is offset by \"\n     << offsetBytes\n     << \" \"\n     << ((abs(offsetBytes) > 1) ? \"bytes\" : \"byte\")\n     << \" from the start of \";\n  if (AllocExpr && printMemFnName(AllocNameOs, C, AllocExpr))\n    os << \"memory allocated by \" << AllocNameOs.str();\n  else\n    os << \"allocated memory\";\n\n  auto R = std::make_unique<PathSensitiveBugReport>(Frontend->OffsetFreeBug,\n                                                    os.str(), N);\n  R->markInteresting(MR->getBaseRegion());\n  R->addRange(Range);\n  C.emitReport(std::move(R));\n}\n\nvoid MallocChecker::HandleUseAfterFree(CheckerContext &C, SourceRange Range,\n                                       SymbolRef Sym) const {\n  const UseFree *Frontend = getRelevantFrontendAs<UseFree>(C, Sym);\n  if (!Frontend)\n    return;\n  if (!Frontend->isEnabled()) {\n    C.addSink();\n    return;\n  }\n\n  if (ExplodedNode *N = C.generateErrorNode()) {\n    AllocationFamily AF =\n        C.getState()->get<RegionState>(Sym)->getAllocationFamily();\n\n    auto R = std::make_unique<PathSensitiveBugReport>(\n        Frontend->UseFreeBug,\n        AF.Kind == AF_InnerBuffer\n            ? \"Inner pointer of container used after re/deallocation\"\n            : \"Use of memory after it is released\",\n        N);\n\n    R->markInteresting(Sym);\n    R->addRange(Range);\n    R->addVisitor<MallocBugVisitor>(Sym);\n\n    if (AF.Kind == AF_InnerBuffer)\n      R->addVisitor(allocation_state::getInnerPointerBRVisitor(Sym));\n\n    C.emitReport(std::move(R));\n  }\n}\n\nvoid MallocChecker::HandleDoubleFree(CheckerContext &C, SourceRange Range,\n                                     bool Released, SymbolRef Sym,\n                                     SymbolRef PrevSym) const {\n  const DoubleFree *Frontend = getRelevantFrontendAs<DoubleFree>(C, Sym);\n  if (!Frontend)\n    return;\n  if (!Frontend->isEnabled()) {\n    C.addSink();\n    return;\n  }\n\n  if (ExplodedNode *N = C.generateErrorNode()) {\n    auto R = std::make_unique<PathSensitiveBugReport>(\n        Frontend->DoubleFreeBug,\n        (Released ? \"Attempt to release already released memory\"\n                  : \"Attempt to release non-owned memory\"),\n        N);\n    if (Range.isValid())\n      R->addRange(Range);\n    R->markInteresting(Sym);\n    if (PrevSym)\n      R->markInteresting(PrevSym);\n    R->addVisitor<MallocBugVisitor>(Sym);\n    C.emitReport(std::move(R));\n  }\n}\n\nvoid MallocChecker::HandleUseZeroAlloc(CheckerContext &C, SourceRange Range,\n                                       SymbolRef Sym) const {\n  const UseZeroAllocated *Frontend =\n      getRelevantFrontendAs<UseZeroAllocated>(C, Sym);\n  if (!Frontend)\n    return;\n  if (!Frontend->isEnabled()) {\n    C.addSink();\n    return;\n  }\n\n  if (ExplodedNode *N = C.generateErrorNode()) {\n    auto R = std::make_unique<PathSensitiveBugReport>(\n        Frontend->UseZeroAllocatedBug, \"Use of memory allocated with size zero\",\n        N);\n\n    R->addRange(Range);\n    if (Sym) {\n      R->markInteresting(Sym);\n      R->addVisitor<MallocBugVisitor>(Sym);\n    }\n    C.emitReport(std::move(R));\n  }\n}\n\nvoid MallocChecker::HandleFunctionPtrFree(CheckerContext &C, SVal ArgVal,\n                                          SourceRange Range,\n                                          const Expr *FreeExpr,\n                                          AllocationFamily Family) const {\n  const BadFree *Frontend = getRelevantFrontendAs<BadFree>(Family);\n  if (!Frontend)\n    return;\n  if (!Frontend->isEnabled()) {\n    C.addSink();\n    return;\n  }\n\n  if (ExplodedNode *N = C.generateErrorNode()) {\n    SmallString<100> Buf;\n    llvm::raw_svector_ostream Os(Buf);\n\n    const MemRegion *MR = ArgVal.getAsRegion();\n    while (const ElementRegion *ER = dyn_cast_or_null<ElementRegion>(MR))\n      MR = ER->getSuperRegion();\n\n    Os << \"Argument to \";\n    if (!printMemFnName(Os, C, FreeExpr))\n      Os << \"deallocator\";\n\n    Os << \" is a function pointer\";\n\n    auto R = std::make_unique<PathSensitiveBugReport>(Frontend->BadFreeBug,\n                                                      Os.str(), N);\n    R->markInteresting(MR);\n    R->addRange(Range);\n    C.emitReport(std::move(R));\n  }\n}\n\nProgramStateRef\nMallocChecker::ReallocMemAux(CheckerContext &C, const CallEvent &Call,\n                             bool ShouldFreeOnFail, ProgramStateRef State,\n                             AllocationFamily Family, bool SuffixWithN) const {\n  if (!State)\n    return nullptr;\n\n  const CallExpr *CE = cast<CallExpr>(Call.getOriginExpr());\n\n  if ((SuffixWithN && CE->getNumArgs() < 3) || CE->getNumArgs() < 2)\n    return nullptr;\n\n  const Expr *arg0Expr = CE->getArg(0);\n  SVal Arg0Val = C.getSVal(arg0Expr);\n  if (!isa<DefinedOrUnknownSVal>(Arg0Val))\n    return nullptr;\n  DefinedOrUnknownSVal arg0Val = Arg0Val.castAs<DefinedOrUnknownSVal>();\n\n  SValBuilder &svalBuilder = C.getSValBuilder();\n\n  DefinedOrUnknownSVal PtrEQ = svalBuilder.evalEQ(\n      State, arg0Val, svalBuilder.makeNullWithType(arg0Expr->getType()));\n\n  // Get the size argument.\n  const Expr *Arg1 = CE->getArg(1);\n\n  // Get the value of the size argument.\n  SVal TotalSize = C.getSVal(Arg1);\n  if (SuffixWithN)\n    TotalSize = evalMulForBufferSize(C, Arg1, CE->getArg(2));\n  if (!isa<DefinedOrUnknownSVal>(TotalSize))\n    return nullptr;\n\n  // Compare the size argument to 0.\n  DefinedOrUnknownSVal SizeZero = svalBuilder.evalEQ(\n      State, TotalSize.castAs<DefinedOrUnknownSVal>(),\n      svalBuilder.makeIntValWithWidth(\n          svalBuilder.getContext().getCanonicalSizeType(), 0));\n\n  ProgramStateRef StatePtrIsNull, StatePtrNotNull;\n  std::tie(StatePtrIsNull, StatePtrNotNull) = State->assume(PtrEQ);\n  ProgramStateRef StateSizeIsZero, StateSizeNotZero;\n  std::tie(StateSizeIsZero, StateSizeNotZero) = State->assume(SizeZero);\n  // We only assume exceptional states if they are definitely true; if the\n  // state is under-constrained, assume regular realloc behavior.\n  bool PrtIsNull = StatePtrIsNull && !StatePtrNotNull;\n  bool SizeIsZero = StateSizeIsZero && !StateSizeNotZero;\n\n  // If the ptr is NULL and the size is not 0, the call is equivalent to\n  // malloc(size).\n  if (PrtIsNull && !SizeIsZero) {\n    ProgramStateRef stateMalloc = MallocMemAux(\n        C, Call, TotalSize, UndefinedVal(), StatePtrIsNull, Family);\n    return stateMalloc;\n  }\n\n  // Proccess as allocation of 0 bytes.\n  if (PrtIsNull && SizeIsZero)\n    return State;",
+          "source_spans": [
+            {
+              "role": "helper",
+              "symbol": "MallocChecker::FreeMemAux",
+              "file": "clang/lib/StaticAnalyzer/Checkers/MallocChecker.cpp",
+              "start_line": 2315,
+              "end_line": 2974
+            }
+          ]
+        },
+        {
+          "id": "metaop:0c42cf4c9057aa4b060de371",
+          "order": 4,
+          "kind": "detection",
+          "meta_op": "Read RegionState on memory access and report use of a released allocation.",
+          "callback_context": [
+            "MallocChecker::checkLocation"
+          ],
+          "applies_to_frontends": [
+            "frontend:06f69d363efa4ce08f748e88",
+            "frontend:adb829186e42f7350171e28e",
+            "frontend:fbf7126932cb777361353b6d"
+          ],
+          "depends_on": [
+            "metaop:755cd4eed00d6aa938b1493d"
+          ],
+          "behavior": {
+            "preconditions": [],
+            "state_reads": [
+              "RegionState[accessed symbol]"
+            ],
+            "state_writes": [],
+            "transitions": [],
+            "reports": [
+              "Use of memory after it is freed"
+            ]
+          },
+          "api_refs": [
+            {
+              "id": "api:580faeb0c4c90b1b2c353a9c",
+              "qualified_name": "clang::ento::ProgramState::get"
+            },
+            {
+              "id": "api:8914c5ed6dc0f00387b69627",
+              "qualified_name": "clang::ento::CheckerContext::emitReport"
+            }
+          ],
+          "meta_impl": "void MallocChecker::checkLocation(SVal l, bool isLoad, const Stmt *S,\n                                  CheckerContext &C) const {\n  SymbolRef Sym = l.getLocSymbolInBase();\n  if (Sym) {\n    checkUseAfterFree(Sym, C, S);\n    checkUseZeroAllocated(Sym, C, S);\n  }\n\nvoid MallocChecker::HandleUseAfterFree(CheckerContext &C, SourceRange Range,\n                                       SymbolRef Sym) const {\n  const UseFree *Frontend = getRelevantFrontendAs<UseFree>(C, Sym);\n  if (!Frontend)\n    return;\n  if (!Frontend->isEnabled()) {\n    C.addSink();\n    return;\n  }",
+          "source_spans": [
+            {
+              "role": "callback_segment",
+              "symbol": "MallocChecker::checkLocation",
+              "file": "clang/lib/StaticAnalyzer/Checkers/MallocChecker.cpp",
+              "start_line": 3668,
+              "end_line": 3674
+            },
+            {
+              "role": "report_helper",
+              "symbol": "MallocChecker::HandleUseAfterFree",
+              "file": "clang/lib/StaticAnalyzer/Checkers/MallocChecker.cpp",
+              "start_line": 2798,
+              "end_line": 2806
+            }
+          ]
+        },
+        {
+          "id": "metaop:72d54c7d67e9a0cbaf78dcc9",
+          "order": 5,
+          "kind": "lifecycle_cleanup",
+          "meta_op": "Collect allocated dead symbols as leaks and remove dead allocation state.",
+          "callback_context": [
+            "MallocChecker::checkDeadSymbols"
+          ],
+          "applies_to_frontends": [
+            "frontend:06f69d363efa4ce08f748e88",
+            "frontend:6d020c6bb3d198f9e93fbc02"
+          ],
+          "depends_on": [
+            "metaop:ab94c1766baa204d15b85804"
+          ],
+          "behavior": {
+            "preconditions": [],
+            "state_reads": [
+              "RegionState entries"
+            ],
+            "state_writes": [
+              "remove dead allocation state"
+            ],
+            "transitions": [],
+            "reports": [
+              "memory leak"
+            ]
+          },
+          "api_refs": [
+            {
+              "id": "api:432eb5b9ff50440a0794eb99",
+              "qualified_name": "clang::ento::SymbolReaper::isDead"
+            },
+            {
+              "id": "api:4db73b63e0c13374bd4f2d68",
+              "qualified_name": "clang::ento::ProgramState::remove"
+            },
+            {
+              "id": "api:2669ca957a0ccf39ad92c422",
+              "qualified_name": "clang::ento::CheckerContext::addTransition"
+            }
+          ],
+          "meta_impl": "void MallocChecker::checkDeadSymbols(SymbolReaper &SymReaper,\n                                     CheckerContext &C) const\n{\n  ProgramStateRef state = C.getState();\n  RegionStateTy OldRS = state->get<RegionState>();\n  RegionStateTy::Factory &F = state->get_context<RegionState>();\n\n  RegionStateTy RS = OldRS;\n  SmallVector<SymbolRef, 2> Errors;\n  for (auto [Sym, State] : RS) {\n    if (SymReaper.isDead(Sym)) {\n      if (State.isAllocated() || State.isAllocatedOfSizeZero())\n        Errors.push_back(Sym);\n      // Remove the dead symbol from the map.\n      RS = F.remove(RS, Sym);\n    }\n  }\n\n  if (RS == OldRS) {\n    // We shouldn't have touched other maps yet.\n    assert(state->get<ReallocPairs>() ==\n           C.getState()->get<ReallocPairs>());\n    assert(state->get<FreeReturnValue>() ==\n           C.getState()->get<FreeReturnValue>());\n    return;\n  }\n\n  // Cleanup the Realloc Pairs Map.\n  ReallocPairsTy RP = state->get<ReallocPairs>();\n  for (auto [Sym, ReallocPair] : RP) {\n    if (SymReaper.isDead(Sym) || SymReaper.isDead(ReallocPair.ReallocatedSym)) {\n      state = state->remove<ReallocPairs>(Sym);\n    }\n  }\n\n  // Cleanup the FreeReturnValue Map.\n  FreeReturnValueTy FR = state->get<FreeReturnValue>();\n  for (auto [Sym, RetSym] : FR) {\n    if (SymReaper.isDead(Sym) || SymReaper.isDead(RetSym)) {\n      state = state->remove<FreeReturnValue>(Sym);\n    }\n  }\n\n  // Generate leak node.\n  ExplodedNode *N = C.getPredecessor();\n  if (!Errors.empty()) {\n    N = C.generateNonFatalErrorNode(C.getState());\n    if (N) {\n      for (SymbolRef Sym : Errors) {\n        HandleLeak(Sym, N, C);\n      }\n    }\n  }\n\n  C.addTransition(state->set<RegionState>(RS), N);\n}\n\n// Allowlist of owning smart pointers we want to recognize.\n// Start with unique_ptr and shared_ptr; weak_ptr is excluded intentionally\n// because it does not own the pointee.\nstatic bool isSmartPtrName(StringRef Name) {\n  return Name == \"unique_ptr\" || Name == \"shared_ptr\";\n}\n\n// Check if a type is a smart owning pointer type.\nstatic bool isSmartPtrType(QualType QT) {\n  QT = QT->getCanonicalTypeUnqualified();\n\n  if (const auto *TST = QT->getAs<TemplateSpecializationType>()) {\n    const TemplateDecl *TD = TST->getTemplateName().getAsTemplateDecl();\n    if (!TD)\n      return false;\n\n    const auto *ND = dyn_cast_or_null<NamedDecl>(TD->getTemplatedDecl());\n    if (!ND)\n      return false;\n\n    // For broader coverage we recognize all template classes with names that\n    // match the allowlist even if they are not declared in namespace 'std'.\n    return isSmartPtrName(ND->getName());\n  }\n\n  return false;\n}\n\n/// Helper struct for collecting smart owning pointer field regions.\n/// This allows both hasSmartPtrField and\n/// collectSmartPtrFieldRegions to share the same traversal logic,\n/// ensuring consistency.\nstruct FieldConsumer {\n  const MemRegion *Reg;\n  CheckerContext *C;\n  llvm::SmallPtrSetImpl<const MemRegion *> *Out;\n\n  FieldConsumer(const MemRegion *Reg, CheckerContext &C,\n                llvm::SmallPtrSetImpl<const MemRegion *> &Out)\n      : Reg(Reg), C(&C), Out(&Out) {}\n\n  void consume(const FieldDecl *FD) {\n    SVal L = C->getState()->getLValue(FD, loc::MemRegionVal(Reg));\n    if (const MemRegion *FR = L.getAsRegion())\n      Out->insert(FR);\n  }\n\n  std::optional<FieldConsumer> switchToBase(const CXXRecordDecl *BaseDecl,\n                                            bool IsVirtual) {\n    // Get the base class region\n    SVal BaseL =\n        C->getState()->getLValue(BaseDecl, Reg->getAs<SubRegion>(), IsVirtual);\n    if (const MemRegion *BaseObjRegion = BaseL.getAsRegion()) {\n      // Return a consumer for the base class\n      return FieldConsumer{BaseObjRegion, *C, *Out};\n    }\n    return std::nullopt;\n  }\n};\n\n/// Check if a record type has smart owning pointer fields (directly or in base\n/// classes). When FC is provided, also collect the field regions.\n///\n/// This function has dual behavior:\n/// - When FC is nullopt: Returns true if smart pointer fields are found\n/// - When FC is provided: Always returns false, but collects field regions\n///   as a side effect through the FieldConsumer\n///\n/// Note: When FC is provided, the return value should be ignored since the\n/// function performs full traversal for collection and always returns false\n/// to avoid early termination.\nstatic bool hasSmartPtrField(const CXXRecordDecl *CRD,\n                             std::optional<FieldConsumer> FC = std::nullopt) {\n  // Check direct fields\n  for (const FieldDecl *FD : CRD->fields()) {\n    if (isSmartPtrType(FD->getType())) {\n      if (!FC)\n        return true;\n      FC->consume(FD);\n    }\n  }\n\n  // Check fields from base classes\n  for (const CXXBaseSpecifier &BaseSpec : CRD->bases()) {\n    if (const CXXRecordDecl *BaseDecl =\n            BaseSpec.getType()->getAsCXXRecordDecl()) {\n      std::optional<FieldConsumer> NewFC;\n      if (FC) {\n        NewFC = FC->switchToBase(BaseDecl, BaseSpec.isVirtual());\n        if (!NewFC)\n          continue;\n      }\n      bool Found = hasSmartPtrField(BaseDecl, NewFC);\n      if (Found && !FC)\n        return true;\n    }\n  }\n  return false;\n}\n\n/// Check if an expression is an rvalue record type passed by value.\nstatic bool isRvalueByValueRecord(const Expr *AE) {\n  if (AE->isGLValue())\n    return false;\n\n  QualType T = AE->getType();\n  if (!T->isRecordType() || T->isReferenceType())\n    return false;\n\n  // Accept common temp/construct forms but don't overfit.\n  return isa<CXXTemporaryObjectExpr, MaterializeTemporaryExpr, CXXConstructExpr,\n             InitListExpr, ImplicitCastExpr, CXXBindTemporaryExpr>(AE);\n}\n\n/// Check if an expression is an rvalue record with smart owning pointer fields\n/// passed by value.\nstatic bool isRvalueByValueRecordWithSmartPtr(const Expr *AE) {\n  if (!isRvalueByValueRecord(AE))\n    return false;\n\n  const auto *CRD = AE->getType()->getAsCXXRecordDecl();\n  return CRD && hasSmartPtrField(CRD);\n}\n\n/// Check if a CXXRecordDecl has a name matching recognized smart pointer names.\nstatic bool isSmartPtrRecord(const CXXRecordDecl *RD) {\n  if (!RD)\n    return false;\n\n  // Check the record name directly and accept both std and custom smart pointer\n  // implementations for broader coverage\n  return isSmartPtrName(RD->getName());\n}\n\n/// Check if a call is a constructor of a smart owning pointer class that\n/// accepts pointer parameters.\nstatic bool isSmartPtrCall(const CallEvent &Call) {\n  // Only check for smart pointer constructor calls\n  const auto *CD = dyn_cast_or_null<CXXConstructorDecl>(Call.getDecl());\n  if (!CD)\n    return false;\n\n  const auto *RD = CD->getParent();\n  if (!isSmartPtrRecord(RD))\n    return false;\n\n  // Check if constructor takes a pointer parameter\n  for (const auto *Param : CD->parameters()) {\n    QualType ParamType = Param->getType();\n    if (ParamType->isPointerType() && !ParamType->isFunctionPointerType() &&\n        !ParamType->isVoidPointerType()) {\n      return true;\n    }\n  }\n\n  return false;\n}\n\n/// Collect memory regions of smart owning pointer fields from a record type\n/// (including fields from base classes).\nstatic void\ncollectSmartPtrFieldRegions(const MemRegion *Reg, QualType RecQT,\n                            CheckerContext &C,\n                            llvm::SmallPtrSetImpl<const MemRegion *> &Out) {\n  if (!Reg)\n    return;\n\n  const auto *CRD = RecQT->getAsCXXRecordDecl();\n  if (!CRD)\n    return;\n\n  FieldConsumer FC{Reg, C, Out};\n  hasSmartPtrField(CRD, FC);\n}\n\n/// Handle smart pointer constructor calls by escaping allocated symbols\n/// that are passed as pointer arguments to the constructor.\nProgramStateRef MallocChecker::handleSmartPointerConstructorArguments(\n    const CallEvent &Call, ProgramStateRef State) const {\n  const auto *CD = cast<CXXConstructorDecl>(Call.getDecl());\n  for (unsigned I = 0, E = std::min(Call.getNumArgs(), CD->getNumParams());\n       I != E; ++I) {\n    const Expr *ArgExpr = Call.getArgExpr(I);\n    if (!ArgExpr)\n      continue;\n\n    QualType ParamType = CD->getParamDecl(I)->getType();\n    if (ParamType->isPointerType() && !ParamType->isFunctionPointerType() &&\n        !ParamType->isVoidPointerType()) {\n      // This argument is a pointer being passed to smart pointer constructor\n      SVal ArgVal = Call.getArgSVal(I);\n      SymbolRef Sym = ArgVal.getAsSymbol();\n      if (Sym && State->contains<RegionState>(Sym)) {\n        const RefState *RS = State->get<RegionState>(Sym);\n        if (RS && (RS->isAllocated() || RS->isAllocatedOfSizeZero())) {\n          State = State->set<RegionState>(Sym, RefState::getEscaped(RS));\n        }\n      }\n    }\n  }\n  return State;\n}\n\n/// Handle all smart pointer related processing in function calls.\n/// This includes both direct smart pointer constructor calls and by-value\n/// arguments containing smart pointer fields.\nProgramStateRef MallocChecker::handleSmartPointerRelatedCalls(\n    const CallEvent &Call, CheckerContext &C, ProgramStateRef State) const {\n\n  // Handle direct smart pointer constructor calls first\n  if (isSmartPtrCall(Call)) {\n    return handleSmartPointerConstructorArguments(Call, State);\n  }\n\n  // Handle smart pointer fields in by-value record arguments\n  llvm::SmallPtrSet<const MemRegion *, 8> SmartPtrFieldRoots;\n  for (unsigned I = 0, E = Call.getNumArgs(); I != E; ++I) {\n    const Expr *AE = Call.getArgExpr(I);\n    if (!AE)\n      continue;\n    AE = AE->IgnoreParenImpCasts();\n\n    if (!isRvalueByValueRecordWithSmartPtr(AE))\n      continue;\n\n    // Find a region for the argument.\n    SVal ArgVal = Call.getArgSVal(I);\n    const MemRegion *ArgRegion = ArgVal.getAsRegion();\n    // Collect direct smart owning pointer field regions\n    collectSmartPtrFieldRegions(ArgRegion, AE->getType(), C,\n                                SmartPtrFieldRoots);\n  }\n\n  // Escape symbols reachable from smart pointer fields\n  if (!SmartPtrFieldRoots.empty()) {\n    SmallVector<const MemRegion *, 8> SmartPtrFieldRootsVec(\n        SmartPtrFieldRoots.begin(), SmartPtrFieldRoots.end());\n    State = EscapeTrackedCallback::EscapeTrackedRegionsReachableFrom(\n        SmartPtrFieldRootsVec, State);\n  }\n\n  return State;\n}\n\nvoid MallocChecker::checkPostCall(const CallEvent &Call,\n                                  CheckerContext &C) const {\n  // Handle existing post-call handlers first\n  if (const auto *PostFN = PostFnMap.lookup(Call)) {\n    (*PostFN)(this, C.getState(), Call, C);\n    return; // Post-handler already called addTransition, we're done\n  }\n\n  // Handle smart pointer related processing only if no post-handler was called\n  C.addTransition(handleSmartPointerRelatedCalls(Call, C, C.getState()));\n}\n\nvoid MallocChecker::checkPreCall(const CallEvent &Call,\n                                 CheckerContext &C) const {\n\n  if (const auto *DC = dyn_cast<CXXDeallocatorCall>(&Call)) {\n    const CXXDeleteExpr *DE = DC->getOriginExpr();\n\n    // FIXME: I don't see a good reason for restricting the check against\n    // use-after-free violations to the case when NewDeleteChecker is disabled.\n    // (However, if NewDeleteChecker is enabled, perhaps it would be better to\n    // do this check a bit later?)\n    if (!NewDeleteChecker.isEnabled())\n      if (SymbolRef Sym = C.getSVal(DE->getArgument()).getAsSymbol())\n        checkUseAfterFree(Sym, C, DE->getArgument());\n\n    if (!isStandardNewDelete(DC->getDecl()))\n      return;\n\n    ProgramStateRef State = C.getState();\n    bool IsKnownToBeAllocated;\n    State = FreeMemAux(\n        C, DE->getArgument(), Call, State,\n        /*Hold*/ false, IsKnownToBeAllocated,\n        AllocationFamily(DE->isArrayForm() ? AF_CXXNewArray : AF_CXXNew));\n\n    C.addTransition(State);",
+          "source_spans": [
+            {
+              "role": "callback_segment",
+              "symbol": "MallocChecker::checkDeadSymbols",
+              "file": "clang/lib/StaticAnalyzer/Checkers/MallocChecker.cpp",
+              "start_line": 3132,
+              "end_line": 3469
+            }
+          ]
+        },
+        {
+          "id": "metaop:7d459b0923df69e10d4a8781",
+          "order": 6,
+          "kind": "escape_handling",
+          "meta_op": "Relinquish or remove allocation ownership when tracked pointers escape.",
+          "callback_context": [
+            "MallocChecker::checkPointerEscape"
+          ],
+          "applies_to_frontends": [
+            "frontend:06f69d363efa4ce08f748e88",
+            "frontend:adb829186e42f7350171e28e",
+            "frontend:6d020c6bb3d198f9e93fbc02",
+            "frontend:57d20d71e6adfd69d4ec7b73",
+            "frontend:fbf7126932cb777361353b6d"
+          ],
+          "depends_on": [
+            "metaop:ab94c1766baa204d15b85804"
+          ],
+          "behavior": {
+            "preconditions": [],
+            "state_reads": [],
+            "state_writes": [
+              "remove or relinquish escaped RegionState entries"
+            ],
+            "transitions": [],
+            "reports": []
+          },
+          "api_refs": [
+            {
+              "id": "api:4db73b63e0c13374bd4f2d68",
+              "qualified_name": "clang::ento::ProgramState::remove"
+            }
+          ],
+          "meta_impl": "ProgramStateRef MallocChecker::checkPointerEscape(ProgramStateRef State,\n                                             const InvalidatedSymbols &Escaped,\n                                             const CallEvent *Call,\n                                             PointerEscapeKind Kind) const {\n  return checkPointerEscapeAux(State, Escaped, Call, Kind,\n                               /*IsConstPointerEscape*/ false);\n}\n\nProgramStateRef MallocChecker::checkConstPointerEscape(ProgramStateRef State,\n                                              const InvalidatedSymbols &Escaped,\n                                              const CallEvent *Call,\n                                              PointerEscapeKind Kind) const {\n  // If a const pointer escapes, it may not be freed(), but it could be deleted.\n  return checkPointerEscapeAux(State, Escaped, Call, Kind,\n                               /*IsConstPointerEscape*/ true);\n}\n\nstatic bool checkIfNewOrNewArrayFamily(const RefState *RS) {\n  return (RS->getAllocationFamily().Kind == AF_CXXNewArray ||\n          RS->getAllocationFamily().Kind == AF_CXXNew);\n}\n\nProgramStateRef MallocChecker::checkPointerEscapeAux(\n    ProgramStateRef State, const InvalidatedSymbols &Escaped,\n    const CallEvent *Call, PointerEscapeKind Kind,\n    bool IsConstPointerEscape) const {\n  // If we know that the call does not free memory, or we want to process the\n  // call later, keep tracking the top level arguments.\n  SymbolRef EscapingSymbol = nullptr;\n  if (Kind == PSK_DirectEscapeOnCall &&\n      !mayFreeAnyEscapedMemoryOrIsModeledExplicitly(Call, State,\n                                                    EscapingSymbol) &&\n      !EscapingSymbol) {\n    return State;",
+          "source_spans": [
+            {
+              "role": "callback_segment",
+              "symbol": "MallocChecker::checkPointerEscape",
+              "file": "clang/lib/StaticAnalyzer/Checkers/MallocChecker.cpp",
+              "start_line": 3896,
+              "end_line": 3929
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "checker:d9515718bc7a635bc309e877",
+      "implementation_class": "SimpleStreamChecker",
+      "summary": "Track fopen streams to detect double close and resource leaks.",
+      "analysis_mode": "path_sensitive",
+      "source_files": [
+        "clang/lib/StaticAnalyzer/Checkers/SimpleStreamChecker.cpp"
+      ],
+      "callbacks": [
+        {
+          "event": "check::PostCall",
+          "method": "SimpleStreamChecker::checkPostCall"
+        },
+        {
+          "event": "check::PreCall",
+          "method": "SimpleStreamChecker::checkPreCall"
+        },
+        {
+          "event": "check::DeadSymbols",
+          "method": "SimpleStreamChecker::checkDeadSymbols"
+        },
+        {
+          "event": "check::PointerEscape",
+          "method": "SimpleStreamChecker::checkPointerEscape"
+        }
+      ],
+      "frontends": [
+        {
+          "id": "frontend:92849681e48cca3dd18ccc98",
+          "name": "SimpleStream",
+          "registration_function": "ento::registerSimpleStreamChecker",
+          "frontend_member": null
+        }
+      ],
+      "state_traits": [
+        {
+          "name": "StreamMap",
+          "kind": "map",
+          "key_type": "SymbolRef",
+          "value_type": "StreamState",
+          "file": "clang/lib/StaticAnalyzer/Checkers/SimpleStreamChecker.cpp"
+        }
+      ],
+      "logic_units": [
+        {
+          "id": "metaop:1a756f45da6d993696461db9",
+          "order": 1,
+          "kind": "state_modeling",
+          "meta_op": "Record a successful fopen result as an opened stream.",
+          "callback_context": [
+            "SimpleStreamChecker::checkPostCall"
+          ],
+          "applies_to_frontends": [
+            "frontend:92849681e48cca3dd18ccc98"
+          ],
+          "depends_on": [],
+          "behavior": {
+            "preconditions": [
+              "call matches fopen",
+              "return value has a symbol"
+            ],
+            "state_reads": [
+              "current ProgramState"
+            ],
+            "state_writes": [
+              "StreamMap[FileDesc] = Opened"
+            ],
+            "transitions": [
+              "opened stream state"
+            ],
+            "reports": []
+          },
+          "api_refs": [
+            {
+              "id": "api:a3b04b0bae49b08edc8f9caa",
+              "qualified_name": "clang::ento::CallDescription::matches"
+            },
+            {
+              "id": "api:cae52db955e55c0fa4c7403b",
+              "qualified_name": "clang::ento::CallEvent::getReturnValue"
+            },
+            {
+              "id": "api:bbdd8c910a6048ce5e673db9",
+              "qualified_name": "clang::ento::CheckerContext::getState"
+            },
+            {
+              "id": "api:1523abd1f161565ea1668250",
+              "qualified_name": "clang::ento::ProgramState::set"
+            },
+            {
+              "id": "api:2669ca957a0ccf39ad92c422",
+              "qualified_name": "clang::ento::CheckerContext::addTransition"
+            }
+          ],
+          "meta_impl": "  if (!OpenFn.matches(Call))\n    return;\n\n  // Get the symbolic value corresponding to the file handle.\n  SymbolRef FileDesc = Call.getReturnValue().getAsSymbol();\n  if (!FileDesc)\n    return;\n\n  // Generate the next transition (an edge in the exploded graph).\n  ProgramStateRef State = C.getState();\n  State = State->set<StreamMap>(FileDesc, StreamState::getOpened());\n  C.addTransition(State);",
+          "source_spans": [
+            {
+              "role": "callback_segment",
+              "symbol": "SimpleStreamChecker::checkPostCall",
+              "file": "clang/lib/StaticAnalyzer/Checkers/SimpleStreamChecker.cpp",
+              "start_line": 95,
+              "end_line": 106
+            }
+          ]
+        },
+        {
+          "id": "metaop:06897d586834c71cafaba8e5",
+          "order": 2,
+          "kind": "detection",
+          "meta_op": "Detect fclose on a stream already marked closed.",
+          "callback_context": [
+            "SimpleStreamChecker::checkPreCall"
+          ],
+          "applies_to_frontends": [
+            "frontend:92849681e48cca3dd18ccc98"
+          ],
+          "depends_on": [],
+          "behavior": {
+            "preconditions": [
+              "call matches fclose",
+              "stream symbol is tracked as closed"
+            ],
+            "state_reads": [
+              "StreamMap[FileDesc]"
+            ],
+            "state_writes": [],
+            "transitions": [],
+            "reports": []
+          },
+          "api_refs": [
+            {
+              "id": "api:a3b04b0bae49b08edc8f9caa",
+              "qualified_name": "clang::ento::CallDescription::matches"
+            },
+            {
+              "id": "api:93691c4943b3c3340fabf5c3",
+              "qualified_name": "clang::ento::CallEvent::getArgSVal"
+            },
+            {
+              "id": "api:580faeb0c4c90b1b2c353a9c",
+              "qualified_name": "clang::ento::ProgramState::get"
+            }
+          ],
+          "meta_impl": "  if (!CloseFn.matches(Call))\n    return;\n\n  const StreamState *SS = State->get<StreamMap>(FileDesc);\n  if (SS && SS->isClosed()) {\n    reportDoubleClose(FileDesc, Call, C);\n    return;",
+          "source_spans": [
+            {
+              "role": "callback_segment",
+              "symbol": "SimpleStreamChecker::checkPreCall",
+              "file": "clang/lib/StaticAnalyzer/Checkers/SimpleStreamChecker.cpp",
+              "start_line": 111,
+              "end_line": 112
+            },
+            {
+              "role": "callback_segment",
+              "symbol": "SimpleStreamChecker::checkPreCall",
+              "file": "clang/lib/StaticAnalyzer/Checkers/SimpleStreamChecker.cpp",
+              "start_line": 121,
+              "end_line": 124
+            }
+          ]
+        },
+        {
+          "id": "metaop:b9a3c1dc81a5d58172f15e60",
+          "order": 3,
+          "kind": "state_transition",
+          "meta_op": "Update a live stream to the closed state after fclose.",
+          "callback_context": [
+            "SimpleStreamChecker::checkPreCall"
+          ],
+          "applies_to_frontends": [
+            "frontend:92849681e48cca3dd18ccc98"
+          ],
+          "depends_on": [
+            "metaop:06897d586834c71cafaba8e5"
+          ],
+          "behavior": {
+            "preconditions": [],
+            "state_reads": [],
+            "state_writes": [
+              "StreamMap[FileDesc] = Closed"
+            ],
+            "transitions": [
+              "closed stream state"
+            ],
+            "reports": []
+          },
+          "api_refs": [
+            {
+              "id": "api:1523abd1f161565ea1668250",
+              "qualified_name": "clang::ento::ProgramState::set"
+            },
+            {
+              "id": "api:2669ca957a0ccf39ad92c422",
+              "qualified_name": "clang::ento::CheckerContext::addTransition"
+            }
+          ],
+          "meta_impl": "  State = State->set<StreamMap>(FileDesc, StreamState::getClosed());\n  C.addTransition(State);",
+          "source_spans": [
+            {
+              "role": "callback_segment",
+              "symbol": "SimpleStreamChecker::checkPreCall",
+              "file": "clang/lib/StaticAnalyzer/Checkers/SimpleStreamChecker.cpp",
+              "start_line": 128,
+              "end_line": 129
+            }
+          ]
+        },
+        {
+          "id": "metaop:376115be290be6b8ef56b471",
+          "order": 4,
+          "kind": "reporting",
+          "meta_op": "Emit a sink report for closing an already closed stream.",
+          "callback_context": [
+            "SimpleStreamChecker::checkPreCall"
+          ],
+          "applies_to_frontends": [
+            "frontend:92849681e48cca3dd18ccc98"
+          ],
+          "depends_on": [
+            "metaop:06897d586834c71cafaba8e5"
+          ],
+          "behavior": {
+            "preconditions": [],
+            "state_reads": [],
+            "state_writes": [],
+            "transitions": [],
+            "reports": [
+              "Closing a previously closed file stream"
+            ]
+          },
+          "api_refs": [
+            {
+              "id": "api:868aa2d75ea8c866298272e0",
+              "qualified_name": "clang::ento::CheckerContext::generateErrorNode"
+            },
+            {
+              "id": "api:8914c5ed6dc0f00387b69627",
+              "qualified_name": "clang::ento::CheckerContext::emitReport"
+            }
+          ],
+          "meta_impl": "void SimpleStreamChecker::reportDoubleClose(SymbolRef FileDescSym,\n                                            const CallEvent &Call,\n                                            CheckerContext &C) const {\n  // We reached a bug, stop exploring the path here by generating a sink.\n  ExplodedNode *ErrNode = C.generateErrorNode();\n  // If we've already reached this node on another path, return.\n  if (!ErrNode)\n    return;\n\n  // Generate the report.\n  auto R = std::make_unique<PathSensitiveBugReport>(\n      DoubleCloseBugType, \"Closing a previously closed file stream\", ErrNode);\n  R->addRange(Call.getSourceRange());\n  R->markInteresting(FileDescSym);\n  C.emitReport(std::move(R));",
+          "source_spans": [
+            {
+              "role": "helper",
+              "symbol": "SimpleStreamChecker::reportDoubleClose",
+              "file": "clang/lib/StaticAnalyzer/Checkers/SimpleStreamChecker.cpp",
+              "start_line": 167,
+              "end_line": 181
+            }
+          ]
+        },
+        {
+          "id": "metaop:cff4003fb89d3a3cdecba2f7",
+          "order": 5,
+          "kind": "lifecycle_cleanup",
+          "meta_op": "Find dead opened streams, remove dead symbols from state, and report leaks.",
+          "callback_context": [
+            "SimpleStreamChecker::checkDeadSymbols"
+          ],
+          "applies_to_frontends": [
+            "frontend:92849681e48cca3dd18ccc98"
+          ],
+          "depends_on": [],
+          "behavior": {
+            "preconditions": [],
+            "state_reads": [
+              "all StreamMap entries"
+            ],
+            "state_writes": [
+              "remove dead StreamMap entries"
+            ],
+            "transitions": [],
+            "reports": [
+              "Opened file is never closed; potential resource leak"
+            ]
+          },
+          "api_refs": [
+            {
+              "id": "api:bbdd8c910a6048ce5e673db9",
+              "qualified_name": "clang::ento::CheckerContext::getState"
+            },
+            {
+              "id": "api:432eb5b9ff50440a0794eb99",
+              "qualified_name": "clang::ento::SymbolReaper::isDead"
+            },
+            {
+              "id": "api:4db73b63e0c13374bd4f2d68",
+              "qualified_name": "clang::ento::ProgramState::remove"
+            },
+            {
+              "id": "api:15d8b2b5afc9e1ee12df50a4",
+              "qualified_name": "clang::ento::CheckerContext::generateNonFatalErrorNode"
+            },
+            {
+              "id": "api:8914c5ed6dc0f00387b69627",
+              "qualified_name": "clang::ento::CheckerContext::emitReport"
+            }
+          ],
+          "meta_impl": "void SimpleStreamChecker::checkDeadSymbols(SymbolReaper &SymReaper,\n                                           CheckerContext &C) const {\n  ProgramStateRef State = C.getState();\n  SymbolVector LeakedStreams;\n  StreamMapTy TrackedStreams = State->get<StreamMap>();\n  for (auto [Sym, StreamStatus] : TrackedStreams) {\n    bool IsSymDead = SymReaper.isDead(Sym);\n\n    // Collect leaked symbols.\n    if (isLeaked(Sym, StreamStatus, IsSymDead, State))\n      LeakedStreams.push_back(Sym);\n\n    // Remove the dead symbol from the streams map.\n    if (IsSymDead)\n      State = State->remove<StreamMap>(Sym);\n  }\n\n  ExplodedNode *N = C.generateNonFatalErrorNode(State);\n  if (!N)\n    return;\n  reportLeaks(LeakedStreams, C, N);\n\nstatic bool isLeaked(SymbolRef Sym, const StreamState &SS,\n                     bool IsSymDead, ProgramStateRef State) {\n  if (IsSymDead && SS.isOpened()) {\n    // If a symbol is NULL, assume that fopen failed on this path.\n    // A symbol should only be considered leaked if it is non-null.\n    ConstraintManager &CMgr = State->getConstraintManager();\n    ConditionTruthVal OpenFailed = CMgr.isNull(State, Sym);\n    return !OpenFailed.isConstrainedTrue();\n  }\n  return false;\n\nvoid SimpleStreamChecker::reportLeaks(ArrayRef<SymbolRef> LeakedStreams,\n                                      CheckerContext &C,\n                                      ExplodedNode *ErrNode) const {\n  // Attach bug reports to the leak node.\n  // TODO: Identify the leaked file descriptor.\n  for (SymbolRef LeakedStream : LeakedStreams) {\n    auto R = std::make_unique<PathSensitiveBugReport>(\n        LeakBugType, \"Opened file is never closed; potential resource leak\",\n        ErrNode);\n    R->markInteresting(LeakedStream);\n    C.emitReport(std::move(R));\n  }",
+          "source_spans": [
+            {
+              "role": "callback_segment",
+              "symbol": "SimpleStreamChecker::checkDeadSymbols",
+              "file": "clang/lib/StaticAnalyzer/Checkers/SimpleStreamChecker.cpp",
+              "start_line": 144,
+              "end_line": 164
+            },
+            {
+              "role": "helper",
+              "symbol": "isLeaked",
+              "file": "clang/lib/StaticAnalyzer/Checkers/SimpleStreamChecker.cpp",
+              "start_line": 132,
+              "end_line": 141
+            },
+            {
+              "role": "report_helper",
+              "symbol": "SimpleStreamChecker::reportLeaks",
+              "file": "clang/lib/StaticAnalyzer/Checkers/SimpleStreamChecker.cpp",
+              "start_line": 184,
+              "end_line": 195
+            }
+          ]
+        },
+        {
+          "id": "metaop:f78d67aabcbff1b65de71cfc",
+          "order": 6,
+          "kind": "escape_handling",
+          "meta_op": "Stop tracking stream symbols that may escape to code which can close them.",
+          "callback_context": [
+            "SimpleStreamChecker::checkPointerEscape"
+          ],
+          "applies_to_frontends": [
+            "frontend:92849681e48cca3dd18ccc98"
+          ],
+          "depends_on": [],
+          "behavior": {
+            "preconditions": [
+              "escape is not a known harmless system call"
+            ],
+            "state_reads": [],
+            "state_writes": [
+              "remove escaped StreamMap entries"
+            ],
+            "transitions": [],
+            "reports": []
+          },
+          "api_refs": [
+            {
+              "id": "api:4db73b63e0c13374bd4f2d68",
+              "qualified_name": "clang::ento::ProgramState::remove"
+            }
+          ],
+          "meta_impl": "SimpleStreamChecker::checkPointerEscape(ProgramStateRef State,\n                                        const InvalidatedSymbols &Escaped,\n                                        const CallEvent *Call,\n                                        PointerEscapeKind Kind) const {\n  // If we know that the call cannot close a file, there is nothing to do.\n  if (Kind == PSK_DirectEscapeOnCall && guaranteedNotToCloseFile(*Call)) {\n    return State;\n  }\n\n  for (SymbolRef Sym : Escaped) {\n    // The symbol escaped. Optimistically, assume that the corresponding file\n    // handle will be closed somewhere else.\n    State = State->remove<StreamMap>(Sym);\n\nbool SimpleStreamChecker::guaranteedNotToCloseFile(const CallEvent &Call) const{\n  // If it's not in a system header, assume it might close a file.\n  if (!Call.isInSystemHeader())\n    return false;\n\n  // Handle cases where we know a buffer's /address/ can escape.\n  if (Call.argumentsMayEscape())\n    return false;\n\n  // Note, even though fclose closes the file, we do not list it here\n  // since the checker is modeling the call.\n\n  return true;",
+          "source_spans": [
+            {
+              "role": "callback_segment",
+              "symbol": "SimpleStreamChecker::checkPointerEscape",
+              "file": "clang/lib/StaticAnalyzer/Checkers/SimpleStreamChecker.cpp",
+              "start_line": 216,
+              "end_line": 228
+            },
+            {
+              "role": "helper",
+              "symbol": "SimpleStreamChecker::guaranteedNotToCloseFile",
+              "file": "clang/lib/StaticAnalyzer/Checkers/SimpleStreamChecker.cpp",
+              "start_line": 198,
+              "end_line": 210
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

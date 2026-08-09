@@ -1,0 +1,16 @@
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_3/round_2/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:40:37: error: indirection requires pointer operand ('std::nullptr_t' invalid)
+   40 |     return E->isNullPointerConstant(*nullptr, Expr::NPC_ValueDependentIsNotNull);
+      |                                     ^~~~~~~~
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_3/round_2/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:130:14: error: cannot initialize return object of type 'const Expr *' with an lvalue of type 'clang::CompoundStmt const *'
+  130 |       return CS;
+      |              ^~
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_3/round_2/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:131:12: error: cannot initialize return object of type 'const Expr *' with an lvalue of type 'const Stmt *'
+  131 |     return S;
+      |            ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_3/round_2/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:221:91: error: cannot assign to variable 'I' with const-qualified type 'const DeclStmt::const_decl_iterator' (aka 'Decl *const *const')
+  221 |       for (const DeclStmt::const_decl_iterator I = DS->decl_begin(); I != DS->decl_end(); ++I) {
+      |                                                                                           ^ ~
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_3/round_2/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:221:48: note: variable 'I' declared const here
+  221 |       for (const DeclStmt::const_decl_iterator I = DS->decl_begin(); I != DS->decl_end(); ++I) {
+      |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~
+4 errors generated.

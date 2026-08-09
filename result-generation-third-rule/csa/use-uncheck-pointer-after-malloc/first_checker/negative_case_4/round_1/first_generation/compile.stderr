@@ -1,0 +1,39 @@
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_4/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:68:24: error: cannot initialize a parameter of type 'const VarDecl *' with an rvalue of type 'const ValueDecl *'
+   68 |         checkExpr(RHS, DRE->getDecl());
+      |                        ^~~~~~~~~~~~~~
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_4/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:177:50: note: passing argument to parameter 'AssignedVar' here
+  177 |     void checkExpr(const Expr *E, const VarDecl *AssignedVar) {
+      |                                                  ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_4/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:236:15: error: use of undeclared identifier 'isTrackedVarFromExpr'; did you mean 'getTrackedVarFromExpr'?
+  236 |       return (isTrackedVarFromExpr(BO->getLHS()) == V &&
+      |               ^~~~~~~~~~~~~~~~~~~~
+      |               getTrackedVarFromExpr
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_4/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:215:25: note: 'getTrackedVarFromExpr' declared here
+  215 |   static const VarDecl *getTrackedVarFromExpr(const Expr *E) {
+      |                         ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_4/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:238:19: error: non-const lvalue reference to type 'ASTContext' cannot bind to a temporary of type 'SourceLocation'
+  238 |                   E->getExprLoc(), Expr::NPC_ValueDependentIsNull)) ||
+      |                   ^~~~~~~~~~~~~~~
+/home/llvm/llvm-project/clang/include/clang/AST/Expr.h:848:19: note: passing argument to parameter 'Ctx' here
+  848 |       ASTContext &Ctx,
+      |                   ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_4/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:239:15: error: use of undeclared identifier 'isTrackedVarFromExpr'; did you mean 'getTrackedVarFromExpr'?
+  239 |              (isTrackedVarFromExpr(BO->getRHS()) == V &&
+      |               ^~~~~~~~~~~~~~~~~~~~
+      |               getTrackedVarFromExpr
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_4/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:215:25: note: 'getTrackedVarFromExpr' declared here
+  215 |   static const VarDecl *getTrackedVarFromExpr(const Expr *E) {
+      |                         ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_4/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:241:19: error: non-const lvalue reference to type 'ASTContext' cannot bind to a temporary of type 'SourceLocation'
+  241 |                   E->getExprLoc(), Expr::NPC_ValueDependentIsNull));
+      |                   ^~~~~~~~~~~~~~~
+/home/llvm/llvm-project/clang/include/clang/AST/Expr.h:848:19: note: passing argument to parameter 'Ctx' here
+  848 |       ASTContext &Ctx,
+      |                   ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_4/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:352:62: error: too few arguments to function call, single argument 'D' was not specified
+  352 |               emitASTReport(Later, AM.getAnalysisDeclContext(), BR);
+      |                                    ~~~~~~~~~~~~~~~~~~~~~~~~~ ^
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/PathSensitive/AnalysisManager.h:122:24: note: 'getAnalysisDeclContext' declared here
+  122 |   AnalysisDeclContext *getAnalysisDeclContext(const Decl *D) {
+      |                        ^                      ~~~~~~~~~~~~~
+6 errors generated.

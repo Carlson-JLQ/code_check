@@ -1,0 +1,7 @@
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_2/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:59:34: error: non-const lvalue reference to type 'ASTContext' cannot bind to a temporary of type 'std::nullptr_t'
+   59 |     if (E->isNullPointerConstant(nullptr, Expr::NPC_ValueDependentIsNotNull))
+      |                                  ^~~~~~~
+/home/llvm/llvm-project/clang/include/clang/AST/Expr.h:848:19: note: passing argument to parameter 'Ctx' here
+  848 |       ASTContext &Ctx,
+      |                   ^
+1 error generated.

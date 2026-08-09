@@ -1,0 +1,13 @@
+{
+  "case_path": "/home/checker/code_check/experiment/gjb8114/codeql_test_case/no_else_branch/no_else_branch_case_6.cpp",
+  "case_type": "negative",
+  "expected_diagnostics": [
+    "禁止省略 if-else if 语句的 else 分支"
+  ],
+  "actual_diagnostics": [],
+  "returncode": 0,
+  "stdout": "",
+  "stderr": "",
+  "success": false,
+  "failure_category": "false_negative"
+}

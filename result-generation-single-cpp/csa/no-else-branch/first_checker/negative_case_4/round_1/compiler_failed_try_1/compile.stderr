@@ -1,0 +1,4 @@
+/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_4/round_1/workspace/GeneratedNoElseBranchChecker.cpp:68:16: error: no member named 'getGraphTrait' in 'clang::ento::BugReporter'
+   68 |         N = BR.getGraphTrait()->getRoot(); // fallback-less path would not compile
+      |             ~~ ^
+1 error generated.

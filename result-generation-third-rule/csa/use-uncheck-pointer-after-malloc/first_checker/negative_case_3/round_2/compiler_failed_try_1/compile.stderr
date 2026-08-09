@@ -1,0 +1,4 @@
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_3/round_2/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:69:29: error: no member named 'isNullValue' in 'llvm::APInt'
+   69 |       return IL->getValue().isNullValue();
+      |              ~~~~~~~~~~~~~~ ^
+1 error generated.

@@ -1,0 +1,15 @@
+{
+  "case_path": "/home/checker/code_check/experiment/gjb8114/codeql_test_case/no_assignment_in_condition/no_assignment_in_condition_case_1.cpp",
+  "case_type": "negative",
+  "expected_diagnostics": [
+    "禁止将赋值语句作为逻辑表达式"
+  ],
+  "actual_diagnostics": [
+    "/home/checker/code_check/experiment/gjb8114/codeql_test_case/no_assignment_in_condition/no_assignment_in_condition_case_1.cpp:5:11: warning: 禁止将赋值语句作为逻辑表达式 [gjb8114-r-1-6-3] [gjb8114.NoAssignmentInCondition]"
+  ],
+  "returncode": 0,
+  "stdout": "",
+  "stderr": "/home/checker/code_check/experiment/gjb8114/codeql_test_case/no_assignment_in_condition/no_assignment_in_condition_case_1.cpp:5:11: warning: 禁止将赋值语句作为逻辑表达式 [gjb8114-r-1-6-3] [gjb8114.NoAssignmentInCondition]\n    5 |     if (a = b) {  // 违反：在if条件中使用赋值语句\n      |         ~~^~~\n/home/checker/code_check/experiment/gjb8114/codeql_test_case/no_assignment_in_condition/no_assignment_in_condition_case_1.cpp:5:11: note: 禁止将赋值语句作为逻辑表达式 [gjb8114-r-1-6-3]\n    5 |     if (a = b) {  // 违反：在if条件中使用赋值语句\n      |         ~~^~~\n1 warning generated.\n",
+  "success": true,
+  "failure_category": null
+}

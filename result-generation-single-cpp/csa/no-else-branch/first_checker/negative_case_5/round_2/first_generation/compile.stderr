@@ -1,0 +1,4 @@
+/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_5/round_2/workspace/GeneratedNoElseBranchChecker.cpp:104:12: error: no member named 'GetPathDiagnosticLocation' in 'clang::ento::BugReporter'
+  104 |         BR.GetPathDiagnosticLocation(ReportSite, BR.getSourceManager()));
+      |         ~~ ^
+1 error generated.

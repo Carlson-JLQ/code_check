@@ -1,0 +1,4 @@
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_9/round_2/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:14:10: fatal error: 'clang/StaticAnalyzer/Core/BugReporter/BugReport.h' file not found
+   14 | #include "clang/StaticAnalyzer/Core/BugReporter/BugReport.h"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 error generated.

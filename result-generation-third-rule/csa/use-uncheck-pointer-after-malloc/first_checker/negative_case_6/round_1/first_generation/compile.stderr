@@ -1,0 +1,483 @@
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:306:11: error: binding reference of type 'SourceManager' to value of type 'const SourceManager' drops 'const' qualifier
+  306 |           SM(BR.getSourceManager()) {}
+      |           ^  ~~~~~~~~~~~~~~~~~~~~~
+In file included from /home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:5:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/Decl.h:17:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/APValue.h:16:
+In file included from /home/llvm/llvm-project/clang/include/clang/Basic/LLVM.h:21:
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:734:12: error: call to deleted constructor of 'clang::Expr'
+  734 |     return CastInfo<X, const Y>::castFailed();
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:754:10: note: in instantiation of function template specialization 'llvm::dyn_cast_if_present<clang::Expr, std::nullptr_t>' requested here
+  754 |   return dyn_cast_if_present<X>(Val);
+      |          ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:313:34: note: in instantiation of function template specialization 'llvm::dyn_cast_or_null<clang::Expr, std::nullptr_t>' requested here
+  313 |         if (const Expr *Parent = dyn_cast_or_null<Expr>(CE->getStmtClass() ?
+      |                                  ^
+/home/llvm/llvm-project/clang/include/clang/AST/Expr.h:117:3: note: 'Expr' has been explicitly marked deleted here
+  117 |   Expr(const Expr&) = delete;
+      |   ^
+In file included from /home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:5:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/Decl.h:17:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/APValue.h:16:
+In file included from /home/llvm/llvm-project/clang/include/clang/Basic/LLVM.h:21:
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:735:10: error: call to deleted constructor of 'clang::Expr'
+  735 |   return CastInfo<X, const Y>::doCastIfPossible(detail::unwrapValue(Val));
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/llvm/llvm-project/clang/include/clang/AST/Expr.h:117:3: note: 'Expr' has been explicitly marked deleted here
+  117 |   Expr(const Expr&) = delete;
+      |   ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:313:25: error: no viable conversion from 'clang::Expr' to 'const Expr *'
+  313 |         if (const Expr *Parent = dyn_cast_or_null<Expr>(CE->getStmtClass() ?
+      |                         ^        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  314 |                                                         nullptr : nullptr)) {
+      |                                                         ~~~~~~~~~~~~~~~~~~
+In file included from /home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:5:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/Decl.h:17:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/APValue.h:16:
+In file included from /home/llvm/llvm-project/clang/include/clang/Basic/LLVM.h:21:
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:490:54: error: functional-style cast from rvalue to reference type 'CastReturnType' (aka 'const clang::Expr &')
+  490 |   static inline CastReturnType castFailed() { return CastReturnType(nullptr); }
+      |                                                      ^~~~~~~~~~~~~~~~~~~~~~~
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:734:34: note: in instantiation of member function 'llvm::CastInfo<clang::Expr, const std::nullptr_t>::castFailed' requested here
+  734 |     return CastInfo<X, const Y>::castFailed();
+      |                                  ^
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:64:65: error: cannot initialize a parameter of type 'const Stmt *' with an rvalue of type 'const std::nullptr_t *'
+   64 |   static inline bool doit(const From &Val) { return To::classof(&Val); }
+      |                                                                 ^~~~
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:81:32: note: in instantiation of member function 'llvm::isa_impl<clang::Expr, std::nullptr_t>::doit' requested here
+   81 |     return isa_impl<To, From>::doit(Val);
+      |                                ^
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:137:37: note: in instantiation of member function 'llvm::isa_impl_cl<clang::Expr, const std::nullptr_t>::doit' requested here
+  137 |     return isa_impl_cl<To, FromTy>::doit(Val);
+      |                                     ^
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:257:58: note: in instantiation of member function 'llvm::isa_impl_wrap<clang::Expr, const std::nullptr_t, const std::nullptr_t>::doit' requested here
+  257 |         typename simplify_type<const From>::SimpleType>::doit(f);
+      |                                                          ^
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:493:16: note: in instantiation of member function 'llvm::CastIsPossible<clang::Expr, const std::nullptr_t>::isPossible' requested here
+  493 |     if (!Self::isPossible(f))
+      |                ^
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:735:32: note: in instantiation of member function 'llvm::CastInfo<clang::Expr, const std::nullptr_t>::doCastIfPossible' requested here
+  735 |   return CastInfo<X, const Y>::doCastIfPossible(detail::unwrapValue(Val));
+      |                                ^
+/home/llvm/llvm-project/clang/include/clang/AST/Expr.h:1037:35: note: passing argument to parameter 'T' here
+ 1037 |   static bool classof(const Stmt *T) {
+      |                                   ^
+In file included from /home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:8:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:395:
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:24:1: error: 'VisitWhileStmt' is a private member of '(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor'
+   24 | WHILESTMT(WhileStmt, Stmt)
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:22:33: note: expanded from macro 'WHILESTMT'
+   22 | #  define WHILESTMT(Type, Base) STMT(Type, Base)
+      |                                 ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:391:12: note: expanded from macro 'STMT'
+  391 |     TRY_TO(Visit##CLASS(S));                                                   \
+      |            ^
+<scratch space>:76:1: note: expanded from here
+   76 | VisitWhileStmt
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:24:1: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::WalkUpFromWhileStmt' requested here
+   24 | WHILESTMT(WhileStmt, Stmt)
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:22:33: note: expanded from macro 'WHILESTMT'
+   22 | #  define WHILESTMT(Type, Base) STMT(Type, Base)
+      |                                 ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:651:14: note: expanded from macro 'STMT'
+  651 |       TRY_TO(WalkUpFrom##CLASS(static_cast<CLASS *>(S)));                      \
+      |              ^
+<scratch space>:102:1: note: expanded from here
+  102 | WalkUpFromWhileStmt
+      | ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:64:23: note: expanded from macro 'TRY_TO'
+   64 |     if (!getDerived().CALL_EXPR)                                               \
+      |                       ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:697:16: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::PostVisitStmt' requested here
+  697 |         TRY_TO(PostVisitStmt(CurrS));
+      |                ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:64:23: note: expanded from macro 'TRY_TO'
+   64 |     if (!getDerived().CALL_EXPR)                                               \
+      |                       ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:334:44: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::TraverseStmt' requested here
+  334 |       return RecursiveASTVisitor<Visitor>::TraverseStmt(S);
+      |                                            ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:241:10: note: implicitly declared private here
+  241 |     bool VisitWhileStmt(WhileStmt *WS) {
+      |          ^
+In file included from /home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:8:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:395:
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:50:1: error: 'VisitUnaryOperator' is a private member of '(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor'
+   50 | UNARYOPERATOR(UnaryOperator, Expr)
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:48:37: note: expanded from macro 'UNARYOPERATOR'
+   48 | #  define UNARYOPERATOR(Type, Base) EXPR(Type, Base)
+      |                                     ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:38:28: note: expanded from macro 'EXPR'
+   38 | #  define EXPR(Type, Base) VALUESTMT(Type, Base)
+      |                            ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:28:33: note: expanded from macro 'VALUESTMT'
+   28 | #  define VALUESTMT(Type, Base) STMT(Type, Base)
+      |                                 ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:391:12: note: expanded from macro 'STMT'
+  391 |     TRY_TO(Visit##CLASS(S));                                                   \
+      |            ^
+<scratch space>:96:1: note: expanded from here
+   96 | VisitUnaryOperator
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:50:1: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::WalkUpFromUnaryOperator' requested here
+   50 | UNARYOPERATOR(UnaryOperator, Expr)
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:48:37: note: expanded from macro 'UNARYOPERATOR'
+   48 | #  define UNARYOPERATOR(Type, Base) EXPR(Type, Base)
+      |                                     ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:38:28: note: expanded from macro 'EXPR'
+   38 | #  define EXPR(Type, Base) VALUESTMT(Type, Base)
+      |                            ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:28:33: note: expanded from macro 'VALUESTMT'
+   28 | #  define VALUESTMT(Type, Base) STMT(Type, Base)
+      |                                 ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:651:14: note: expanded from macro 'STMT'
+  651 |       TRY_TO(WalkUpFrom##CLASS(static_cast<CLASS *>(S)));                      \
+      |              ^
+<scratch space>:114:1: note: expanded from here
+  114 | WalkUpFromUnaryOperator
+      | ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:64:23: note: expanded from macro 'TRY_TO'
+   64 |     if (!getDerived().CALL_EXPR)                                               \
+      |                       ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:697:16: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::PostVisitStmt' requested here
+  697 |         TRY_TO(PostVisitStmt(CurrS));
+      |                ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:64:23: note: expanded from macro 'TRY_TO'
+   64 |     if (!getDerived().CALL_EXPR)                                               \
+      |                       ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:334:44: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::TraverseStmt' requested here
+  334 |       return RecursiveASTVisitor<Visitor>::TraverseStmt(S);
+      |                                            ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:257:10: note: implicitly declared private here
+  257 |     bool VisitUnaryOperator(UnaryOperator *UO) {
+      |          ^
+In file included from /home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:8:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:395:
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:318:1: error: 'VisitMemberExpr' is a private member of '(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor'
+  318 | MEMBEREXPR(MemberExpr, Expr)
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:316:34: note: expanded from macro 'MEMBEREXPR'
+  316 | #  define MEMBEREXPR(Type, Base) EXPR(Type, Base)
+      |                                  ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:38:28: note: expanded from macro 'EXPR'
+   38 | #  define EXPR(Type, Base) VALUESTMT(Type, Base)
+      |                            ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:28:33: note: expanded from macro 'VALUESTMT'
+   28 | #  define VALUESTMT(Type, Base) STMT(Type, Base)
+      |                                 ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:391:12: note: expanded from macro 'STMT'
+  391 |     TRY_TO(Visit##CLASS(S));                                                   \
+      |            ^
+<scratch space>:118:1: note: expanded from here
+  118 | VisitMemberExpr
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:318:1: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::WalkUpFromMemberExpr' requested here
+  318 | MEMBEREXPR(MemberExpr, Expr)
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:316:34: note: expanded from macro 'MEMBEREXPR'
+  316 | #  define MEMBEREXPR(Type, Base) EXPR(Type, Base)
+      |                                  ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:38:28: note: expanded from macro 'EXPR'
+   38 | #  define EXPR(Type, Base) VALUESTMT(Type, Base)
+      |                            ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:28:33: note: expanded from macro 'VALUESTMT'
+   28 | #  define VALUESTMT(Type, Base) STMT(Type, Base)
+      |                                 ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:651:14: note: expanded from macro 'STMT'
+  651 |       TRY_TO(WalkUpFrom##CLASS(static_cast<CLASS *>(S)));                      \
+      |              ^
+<scratch space>:104:1: note: expanded from here
+  104 | WalkUpFromMemberExpr
+      | ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:64:23: note: expanded from macro 'TRY_TO'
+   64 |     if (!getDerived().CALL_EXPR)                                               \
+      |                       ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:697:16: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::PostVisitStmt' requested here
+  697 |         TRY_TO(PostVisitStmt(CurrS));
+      |                ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:64:23: note: expanded from macro 'TRY_TO'
+   64 |     if (!getDerived().CALL_EXPR)                                               \
+      |                       ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:334:44: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::TraverseStmt' requested here
+  334 |       return RecursiveASTVisitor<Visitor>::TraverseStmt(S);
+      |                                            ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:288:10: note: implicitly declared private here
+  288 |     bool VisitMemberExpr(MemberExpr *ME) {
+      |          ^
+In file included from /home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:8:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:395:
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:818:1: error: 'VisitBinaryOperator' is a private member of '(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor'
+  818 | BINARYOPERATOR(BinaryOperator, Expr)
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:816:38: note: expanded from macro 'BINARYOPERATOR'
+  816 | #  define BINARYOPERATOR(Type, Base) EXPR(Type, Base)
+      |                                      ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:38:28: note: expanded from macro 'EXPR'
+   38 | #  define EXPR(Type, Base) VALUESTMT(Type, Base)
+      |                            ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:28:33: note: expanded from macro 'VALUESTMT'
+   28 | #  define VALUESTMT(Type, Base) STMT(Type, Base)
+      |                                 ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:391:12: note: expanded from macro 'STMT'
+  391 |     TRY_TO(Visit##CLASS(S));                                                   \
+      |            ^
+<scratch space>:101:1: note: expanded from here
+  101 | VisitBinaryOperator
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:818:1: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::WalkUpFromBinaryOperator' requested here
+  818 | BINARYOPERATOR(BinaryOperator, Expr)
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:816:38: note: expanded from macro 'BINARYOPERATOR'
+  816 | #  define BINARYOPERATOR(Type, Base) EXPR(Type, Base)
+      |                                      ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:38:28: note: expanded from macro 'EXPR'
+   38 | #  define EXPR(Type, Base) VALUESTMT(Type, Base)
+      |                            ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:28:33: note: expanded from macro 'VALUESTMT'
+   28 | #  define VALUESTMT(Type, Base) STMT(Type, Base)
+      |                                 ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:651:14: note: expanded from macro 'STMT'
+  651 |       TRY_TO(WalkUpFrom##CLASS(static_cast<CLASS *>(S)));                      \
+      |              ^
+<scratch space>:107:1: note: expanded from here
+  107 | WalkUpFromBinaryOperator
+      | ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:64:23: note: expanded from macro 'TRY_TO'
+   64 |     if (!getDerived().CALL_EXPR)                                               \
+      |                       ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:697:16: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::PostVisitStmt' requested here
+  697 |         TRY_TO(PostVisitStmt(CurrS));
+      |                ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:64:23: note: expanded from macro 'TRY_TO'
+   64 |     if (!getDerived().CALL_EXPR)                                               \
+      |                       ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:334:44: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::TraverseStmt' requested here
+  334 |       return RecursiveASTVisitor<Visitor>::TraverseStmt(S);
+      |                                            ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:204:10: note: implicitly declared private here
+  204 |     bool VisitBinaryOperator(BinaryOperator *BO) {
+      |          ^
+In file included from /home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:8:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:395:
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:850:1: error: 'VisitArraySubscriptExpr' is a private member of '(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor'
+  850 | ARRAYSUBSCRIPTEXPR(ArraySubscriptExpr, Expr)
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:848:42: note: expanded from macro 'ARRAYSUBSCRIPTEXPR'
+  848 | #  define ARRAYSUBSCRIPTEXPR(Type, Base) EXPR(Type, Base)
+      |                                          ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:38:28: note: expanded from macro 'EXPR'
+   38 | #  define EXPR(Type, Base) VALUESTMT(Type, Base)
+      |                            ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:28:33: note: expanded from macro 'VALUESTMT'
+   28 | #  define VALUESTMT(Type, Base) STMT(Type, Base)
+      |                                 ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:391:12: note: expanded from macro 'STMT'
+  391 |     TRY_TO(Visit##CLASS(S));                                                   \
+      |            ^
+<scratch space>:121:1: note: expanded from here
+  121 | VisitArraySubscriptExpr
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:850:1: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::WalkUpFromArraySubscriptExpr' requested here
+  850 | ARRAYSUBSCRIPTEXPR(ArraySubscriptExpr, Expr)
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:848:42: note: expanded from macro 'ARRAYSUBSCRIPTEXPR'
+  848 | #  define ARRAYSUBSCRIPTEXPR(Type, Base) EXPR(Type, Base)
+      |                                          ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:38:28: note: expanded from macro 'EXPR'
+   38 | #  define EXPR(Type, Base) VALUESTMT(Type, Base)
+      |                            ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:28:33: note: expanded from macro 'VALUESTMT'
+   28 | #  define VALUESTMT(Type, Base) STMT(Type, Base)
+      |                                 ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:651:14: note: expanded from macro 'STMT'
+  651 |       TRY_TO(WalkUpFrom##CLASS(static_cast<CLASS *>(S)));                      \
+      |              ^
+<scratch space>:127:1: note: expanded from here
+  127 | WalkUpFromArraySubscriptExpr
+      | ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:64:23: note: expanded from macro 'TRY_TO'
+   64 |     if (!getDerived().CALL_EXPR)                                               \
+      |                       ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:697:16: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::PostVisitStmt' requested here
+  697 |         TRY_TO(PostVisitStmt(CurrS));
+      |                ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:64:23: note: expanded from macro 'TRY_TO'
+   64 |     if (!getDerived().CALL_EXPR)                                               \
+      |                       ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:334:44: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::TraverseStmt' requested here
+  334 |       return RecursiveASTVisitor<Visitor>::TraverseStmt(S);
+      |                                            ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:274:10: note: implicitly declared private here
+  274 |     bool VisitArraySubscriptExpr(ArraySubscriptExpr *ASE) {
+      |          ^
+In file included from /home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:8:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:395:
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:1676:1: error: 'VisitIfStmt' is a private member of '(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor'
+ 1676 | IFSTMT(IfStmt, Stmt)
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:1674:30: note: expanded from macro 'IFSTMT'
+ 1674 | #  define IFSTMT(Type, Base) STMT(Type, Base)
+      |                              ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:391:12: note: expanded from macro 'STMT'
+  391 |     TRY_TO(Visit##CLASS(S));                                                   \
+      |            ^
+<scratch space>:103:1: note: expanded from here
+  103 | VisitIfStmt
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:1676:1: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::WalkUpFromIfStmt' requested here
+ 1676 | IFSTMT(IfStmt, Stmt)
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:1674:30: note: expanded from macro 'IFSTMT'
+ 1674 | #  define IFSTMT(Type, Base) STMT(Type, Base)
+      |                              ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:651:14: note: expanded from macro 'STMT'
+  651 |       TRY_TO(WalkUpFrom##CLASS(static_cast<CLASS *>(S)));                      \
+      |              ^
+<scratch space>:106:1: note: expanded from here
+  106 | WalkUpFromIfStmt
+      | ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:64:23: note: expanded from macro 'TRY_TO'
+   64 |     if (!getDerived().CALL_EXPR)                                               \
+      |                       ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:697:16: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::PostVisitStmt' requested here
+  697 |         TRY_TO(PostVisitStmt(CurrS));
+      |                ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:64:23: note: expanded from macro 'TRY_TO'
+   64 |     if (!getDerived().CALL_EXPR)                                               \
+      |                       ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:334:44: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::TraverseStmt' requested here
+  334 |       return RecursiveASTVisitor<Visitor>::TraverseStmt(S);
+      |                                            ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:236:10: note: implicitly declared private here
+  236 |     bool VisitIfStmt(IfStmt *IS) {
+      |          ^
+In file included from /home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:8:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:395:
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:1688:1: error: 'VisitForStmt' is a private member of '(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor'
+ 1688 | FORSTMT(ForStmt, Stmt)
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:1686:31: note: expanded from macro 'FORSTMT'
+ 1686 | #  define FORSTMT(Type, Base) STMT(Type, Base)
+      |                               ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:391:12: note: expanded from macro 'STMT'
+  391 |     TRY_TO(Visit##CLASS(S));                                                   \
+      |            ^
+<scratch space>:111:1: note: expanded from here
+  111 | VisitForStmt
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:1688:1: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::WalkUpFromForStmt' requested here
+ 1688 | FORSTMT(ForStmt, Stmt)
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:1686:31: note: expanded from macro 'FORSTMT'
+ 1686 | #  define FORSTMT(Type, Base) STMT(Type, Base)
+      |                               ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:651:14: note: expanded from macro 'STMT'
+  651 |       TRY_TO(WalkUpFrom##CLASS(static_cast<CLASS *>(S)));                      \
+      |              ^
+<scratch space>:114:1: note: expanded from here
+  114 | WalkUpFromForStmt
+      | ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:64:23: note: expanded from macro 'TRY_TO'
+   64 |     if (!getDerived().CALL_EXPR)                                               \
+      |                       ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:697:16: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::PostVisitStmt' requested here
+  697 |         TRY_TO(PostVisitStmt(CurrS));
+      |                ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:64:23: note: expanded from macro 'TRY_TO'
+   64 |     if (!getDerived().CALL_EXPR)                                               \
+      |                       ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:334:44: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::TraverseStmt' requested here
+  334 |       return RecursiveASTVisitor<Visitor>::TraverseStmt(S);
+      |                                            ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:251:10: note: implicitly declared private here
+  251 |     bool VisitForStmt(ForStmt *FS) {
+      |          ^
+In file included from /home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:8:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:395:
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:1694:1: error: 'VisitDoStmt' is a private member of '(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor'
+ 1694 | DOSTMT(DoStmt, Stmt)
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:1692:30: note: expanded from macro 'DOSTMT'
+ 1692 | #  define DOSTMT(Type, Base) STMT(Type, Base)
+      |                              ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:391:12: note: expanded from macro 'STMT'
+  391 |     TRY_TO(Visit##CLASS(S));                                                   \
+      |            ^
+<scratch space>:115:1: note: expanded from here
+  115 | VisitDoStmt
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:1694:1: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::WalkUpFromDoStmt' requested here
+ 1694 | DOSTMT(DoStmt, Stmt)
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:1692:30: note: expanded from macro 'DOSTMT'
+ 1692 | #  define DOSTMT(Type, Base) STMT(Type, Base)
+      |                              ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:651:14: note: expanded from macro 'STMT'
+  651 |       TRY_TO(WalkUpFrom##CLASS(static_cast<CLASS *>(S)));                      \
+      |              ^
+<scratch space>:118:1: note: expanded from here
+  118 | WalkUpFromDoStmt
+      | ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:64:23: note: expanded from macro 'TRY_TO'
+   64 |     if (!getDerived().CALL_EXPR)                                               \
+      |                       ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:697:16: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::PostVisitStmt' requested here
+  697 |         TRY_TO(PostVisitStmt(CurrS));
+      |                ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:64:23: note: expanded from macro 'TRY_TO'
+   64 |     if (!getDerived().CALL_EXPR)                                               \
+      |                       ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:334:44: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::TraverseStmt' requested here
+  334 |       return RecursiveASTVisitor<Visitor>::TraverseStmt(S);
+      |                                            ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:246:10: note: implicitly declared private here
+  246 |     bool VisitDoStmt(DoStmt *DS) {
+      |          ^
+In file included from /home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:8:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:395:
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:1706:1: error: 'VisitDeclStmt' is a private member of '(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor'
+ 1706 | DECLSTMT(DeclStmt, Stmt)
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:1704:32: note: expanded from macro 'DECLSTMT'
+ 1704 | #  define DECLSTMT(Type, Base) STMT(Type, Base)
+      |                                ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:391:12: note: expanded from macro 'STMT'
+  391 |     TRY_TO(Visit##CLASS(S));                                                   \
+      |            ^
+<scratch space>:123:1: note: expanded from here
+  123 | VisitDeclStmt
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:1706:1: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::WalkUpFromDeclStmt' requested here
+ 1706 | DECLSTMT(DeclStmt, Stmt)
+      | ^
+/home/checker/llvm-build/tools/clang/include/clang/AST/StmtNodes.inc:1704:32: note: expanded from macro 'DECLSTMT'
+ 1704 | #  define DECLSTMT(Type, Base) STMT(Type, Base)
+      |                                ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:651:14: note: expanded from macro 'STMT'
+  651 |       TRY_TO(WalkUpFrom##CLASS(static_cast<CLASS *>(S)));                      \
+      |              ^
+<scratch space>:126:1: note: expanded from here
+  126 | WalkUpFromDeclStmt
+      | ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:64:23: note: expanded from macro 'TRY_TO'
+   64 |     if (!getDerived().CALL_EXPR)                                               \
+      |                       ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:697:16: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::PostVisitStmt' requested here
+  697 |         TRY_TO(PostVisitStmt(CurrS));
+      |                ^
+/home/llvm/llvm-project/clang/include/clang/AST/RecursiveASTVisitor.h:64:23: note: expanded from macro 'TRY_TO'
+   64 |     if (!getDerived().CALL_EXPR)                                               \
+      |                       ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:334:44: note: in instantiation of member function 'clang::RecursiveASTVisitor<(anonymous namespace)::GeneratedUseUncheckPointerAfterMallocChecker::Visitor>::TraverseStmt' requested here
+  334 |       return RecursiveASTVisitor<Visitor>::TraverseStmt(S);
+      |                                            ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_6/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:181:10: note: implicitly declared private here
+  181 |     bool VisitDeclStmt(DeclStmt *DS) {
+      |          ^
+15 errors generated.

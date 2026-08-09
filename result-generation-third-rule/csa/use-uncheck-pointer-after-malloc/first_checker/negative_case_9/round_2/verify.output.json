@@ -1,0 +1,13 @@
+{
+  "case_path": "/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_8.cpp",
+  "case_type": "negative",
+  "expected_diagnostics": [
+    ":[[@LINE]]:9: warning: 禁止动态分配的指针变量未检查即使用"
+  ],
+  "actual_diagnostics": [],
+  "returncode": 0,
+  "stdout": "",
+  "stderr": "",
+  "success": false,
+  "failure_category": "false_negative"
+}

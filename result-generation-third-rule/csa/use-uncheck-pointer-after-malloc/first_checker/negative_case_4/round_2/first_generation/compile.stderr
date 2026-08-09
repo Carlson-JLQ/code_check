@@ -1,0 +1,7 @@
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_4/round_2/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:226:20: error: expected expression
+  226 |         if (LHS && const auto *CE = dyn_cast<CallExpr>(ignoreParenCasts(BO->getRHS()))) {
+      |                    ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_4/round_2/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:227:36: error: use of undeclared identifier 'CE'
+  227 |           const FunctionDecl *FD = CE->getDirectCallee();
+      |                                    ^~
+2 errors generated.

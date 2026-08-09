@@ -1,0 +1,64 @@
+/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_6/round_1/workspace/GeneratedNoElseBranchChecker.cpp:64:9: error: no matching function for call to 'createBegin'
+   64 |         PathDiagnosticLocation::createBegin(Tail->getIfLoc(), BR.getSourceManager());
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/llvm/llvm-project/clang/include/clang/Analysis/PathDiagnostic.h:253:33: note: candidate function not viable: no known conversion from 'SourceLocation' to 'const Decl *' for 1st argument
+  253 |   static PathDiagnosticLocation createBegin(const Decl *D,
+      |                                 ^           ~~~~~~~~~~~~~
+/home/llvm/llvm-project/clang/include/clang/Analysis/PathDiagnostic.h:260:3: note: candidate function not viable: requires 3 arguments, but 2 were provided
+  260 |   createBegin(const Decl *D, const SourceManager &SM,
+      |   ^           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  261 |               const StackFrameOrAnalysisDeclContext SFAC) {
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/llvm/llvm-project/clang/include/clang/Analysis/PathDiagnostic.h:267:3: note: candidate function not viable: requires 3 arguments, but 2 were provided
+  267 |   createBegin(const Stmt *S, const SourceManager &SM,
+      |   ^           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  268 |               const StackFrameOrAnalysisDeclContext SFAC);
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_6/round_1/workspace/GeneratedNoElseBranchChecker.cpp:1:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/Decl.h:16:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/APNumericStorage.h:12:
+In file included from /home/llvm/llvm-project/llvm/include/llvm/ADT/APFloat.h:19:
+In file included from /home/llvm/llvm-project/llvm/include/llvm/ADT/ArrayRef.h:12:
+In file included from /home/llvm/llvm-project/llvm/include/llvm/ADT/Hashing.h:56:
+In file included from /usr/lib/gcc/x86_64-linux-gnu/11/../../../../include/c++/11/memory:76:
+/usr/lib/gcc/x86_64-linux-gnu/11/../../../../include/c++/11/bits/unique_ptr.h:962:34: error: no matching constructor for initialization of 'clang::ento::PathSensitiveBugReport'
+  962 |     { return unique_ptr<_Tp>(new _Tp(std::forward<_Args>(__args)...)); }
+      |                                  ^   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_6/round_1/workspace/GeneratedNoElseBranchChecker.cpp:65:19: note: in instantiation of function template specialization 'std::make_unique<clang::ento::PathSensitiveBugReport, clang::ento::BugType &, const char (&)[46], clang::ento::PathDiagnosticLocation &>' requested here
+   65 |     auto R = std::make_unique<PathSensitiveBugReport>(
+      |                   ^
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugReporter.h:374:3: note: candidate constructor not viable: no known conversion from 'clang::ento::PathDiagnosticLocation' to 'const ExplodedNode *' for 3rd argument
+  374 |   PathSensitiveBugReport(const BugType &bt, const llvm::Twine &desc,
+      |   ^
+  375 |                          const ExplodedNode *errorNode)
+      |                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugReporter.h:378:3: note: candidate constructor not viable: requires 4 arguments, but 3 were provided
+  378 |   PathSensitiveBugReport(const BugType &bt, const llvm::Twine &shortDesc,
+      |   ^                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  379 |                          const llvm::Twine &desc, const ExplodedNode *errorNode)
+      |                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugReporter.h:294:7: note: candidate constructor (the implicit copy constructor) not viable: requires 1 argument, but 3 were provided
+  294 | class PathSensitiveBugReport : public BugReport {
+      |       ^~~~~~~~~~~~~~~~~~~~~~
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugReporter.h:294:7: note: candidate constructor (the implicit move constructor) not viable: requires 1 argument, but 3 were provided
+  294 | class PathSensitiveBugReport : public BugReport {
+      |       ^~~~~~~~~~~~~~~~~~~~~~
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugReporter.h:391:3: note: candidate constructor not viable: requires 5 arguments, but 3 were provided
+  391 |   PathSensitiveBugReport(const BugType &bt, const llvm::Twine &desc,
+      |   ^                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  392 |                          const ExplodedNode *errorNode,
+      |                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  393 |                          PathDiagnosticLocation LocationToUnique,
+      |                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  394 |                          const Decl *DeclToUnique)
+      |                          ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugReporter.h:398:3: note: candidate constructor not viable: requires 6 arguments, but 3 were provided
+  398 |   PathSensitiveBugReport(const BugType &bt, const llvm::Twine &shortDesc,
+      |   ^                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  399 |                          const llvm::Twine &desc, const ExplodedNode *errorNode,
+      |                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  400 |                          PathDiagnosticLocation LocationToUnique,
+      |                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  401 |                          const Decl *DeclToUnique);
+      |                          ~~~~~~~~~~~~~~~~~~~~~~~~
+2 errors generated.

@@ -1,0 +1,77 @@
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_1/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:51:30: error: no member named 'getStoredCallee' in 'clang::CallExpr'
+   51 |     const Expr *Parent = CE->getStoredCallee();
+      |                          ~~  ^
+In file included from /home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_1/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:3:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/Decl.h:17:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/APValue.h:16:
+In file included from /home/llvm/llvm-project/clang/include/clang/Basic/LLVM.h:21:
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:734:12: error: call to implicitly-deleted copy constructor of 'clang::BinaryOperator'
+  734 |     return CastInfo<X, const Y>::castFailed();
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:754:10: note: in instantiation of function template specialization 'llvm::dyn_cast_if_present<clang::BinaryOperator, std::nullptr_t>' requested here
+  754 |   return dyn_cast_if_present<X>(Val);
+      |          ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_1/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:54:25: note: in instantiation of function template specialization 'llvm::dyn_cast_or_null<clang::BinaryOperator, std::nullptr_t>' requested here
+   54 |     const auto *Outer = dyn_cast_or_null<BinaryOperator>(nullptr);
+      |                         ^
+/home/llvm/llvm-project/clang/include/clang/AST/Expr.h:4044:24: note: copy constructor of 'BinaryOperator' is implicitly deleted because base class 'Expr' has a deleted copy constructor
+ 4044 | class BinaryOperator : public Expr {
+      |                        ^
+/home/llvm/llvm-project/clang/include/clang/AST/Expr.h:117:3: note: 'Expr' has been explicitly marked deleted here
+  117 |   Expr(const Expr&) = delete;
+      |   ^
+In file included from /home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_1/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:3:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/Decl.h:17:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/APValue.h:16:
+In file included from /home/llvm/llvm-project/clang/include/clang/Basic/LLVM.h:21:
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:735:10: error: call to implicitly-deleted copy constructor of 'clang::BinaryOperator'
+  735 |   return CastInfo<X, const Y>::doCastIfPossible(detail::unwrapValue(Val));
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/llvm/llvm-project/clang/include/clang/AST/Expr.h:4044:24: note: copy constructor of 'BinaryOperator' is implicitly deleted because base class 'Expr' has a deleted copy constructor
+ 4044 | class BinaryOperator : public Expr {
+      |                        ^
+/home/llvm/llvm-project/clang/include/clang/AST/Expr.h:117:3: note: 'Expr' has been explicitly marked deleted here
+  117 |   Expr(const Expr&) = delete;
+      |   ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_1/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:54:17: error: variable 'Outer' with type 'const auto *' has incompatible initializer of type 'clang::BinaryOperator'
+   54 |     const auto *Outer = dyn_cast_or_null<BinaryOperator>(nullptr);
+      |                 ^       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_1/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:185:5: error: no template named 'SmallPtrSet'; did you mean 'llvm::SmallPtrSet'?
+  185 |     SmallPtrSet<const VarDecl *, 16> Reported;
+      |     ^~~~~~~~~~~
+      |     llvm::SmallPtrSet
+/home/llvm/llvm-project/clang/include/clang/AST/ASTContext.h:57:41: note: 'llvm::SmallPtrSet' declared here
+   57 | template <typename T, unsigned N> class SmallPtrSet;
+      |                                         ^
+In file included from /home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_1/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:3:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/Decl.h:17:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/APValue.h:16:
+In file included from /home/llvm/llvm-project/clang/include/clang/Basic/LLVM.h:21:
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:490:54: error: functional-style cast from rvalue to reference type 'CastReturnType' (aka 'const clang::BinaryOperator &')
+  490 |   static inline CastReturnType castFailed() { return CastReturnType(nullptr); }
+      |                                                      ^~~~~~~~~~~~~~~~~~~~~~~
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:734:34: note: in instantiation of member function 'llvm::CastInfo<clang::BinaryOperator, const std::nullptr_t>::castFailed' requested here
+  734 |     return CastInfo<X, const Y>::castFailed();
+      |                                  ^
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:64:65: error: cannot initialize a parameter of type 'const Stmt *' with an rvalue of type 'const std::nullptr_t *'
+   64 |   static inline bool doit(const From &Val) { return To::classof(&Val); }
+      |                                                                 ^~~~
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:81:32: note: in instantiation of member function 'llvm::isa_impl<clang::BinaryOperator, std::nullptr_t>::doit' requested here
+   81 |     return isa_impl<To, From>::doit(Val);
+      |                                ^
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:137:37: note: in instantiation of member function 'llvm::isa_impl_cl<clang::BinaryOperator, const std::nullptr_t>::doit' requested here
+  137 |     return isa_impl_cl<To, FromTy>::doit(Val);
+      |                                     ^
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:257:58: note: in instantiation of member function 'llvm::isa_impl_wrap<clang::BinaryOperator, const std::nullptr_t, const std::nullptr_t>::doit' requested here
+  257 |         typename simplify_type<const From>::SimpleType>::doit(f);
+      |                                                          ^
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:493:16: note: in instantiation of member function 'llvm::CastIsPossible<clang::BinaryOperator, const std::nullptr_t>::isPossible' requested here
+  493 |     if (!Self::isPossible(f))
+      |                ^
+/home/llvm/llvm-project/llvm/include/llvm/Support/Casting.h:735:32: note: in instantiation of member function 'llvm::CastInfo<clang::BinaryOperator, const std::nullptr_t>::doCastIfPossible' requested here
+  735 |   return CastInfo<X, const Y>::doCastIfPossible(detail::unwrapValue(Val));
+      |                                ^
+/home/llvm/llvm-project/clang/include/clang/AST/Expr.h:4213:35: note: passing argument to parameter 'S' here
+ 4213 |   static bool classof(const Stmt *S) {
+      |                                   ^
+7 errors generated.

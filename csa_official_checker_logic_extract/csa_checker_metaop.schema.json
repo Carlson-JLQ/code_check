@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "csa_checker_metaop.schema.json",
+  "title": "CSA checker meta-op dataset",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["metadata", "checkers"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "dataset", "llvm_revision", "generated_at", "source_roots", "language", "checker_count", "logic_unit_count"],
+      "properties": {
+        "schema_version": {"const": "1.0"},
+        "dataset": {"const": "csa_checker_metaop"},
+        "llvm_revision": {"type": "string"},
+        "generated_at": {"type": "string", "format": "date-time"},
+        "source_roots": {"type": "array", "items": {"type": "string"}},
+        "language": {"type": "array", "items": {"enum": ["c", "cpp"]}, "uniqueItems": true},
+        "checker_count": {"type": "integer", "minimum": 0},
+        "logic_unit_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "checkers": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/checker"}
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[a-z]+:[0-9a-f]{24}$"},
+    "stringArray": {"type": "array", "items": {"type": "string"}},
+    "checker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "implementation_class", "summary", "analysis_mode", "source_files", "callbacks", "frontends", "state_traits", "logic_units"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "implementation_class": {"type": "string", "minLength": 1},
+        "summary": {"type": "string", "minLength": 1},
+        "analysis_mode": {"enum": ["path_sensitive", "path_insensitive", "hybrid"]},
+        "source_files": {"$ref": "#/$defs/stringArray"},
+        "callbacks": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["event", "method"], "properties": {"event": {"type": "string"}, "method": {"type": "string"}}}},
+        "frontends": {"type": "array", "items": {"$ref": "#/$defs/frontend"}},
+        "state_traits": {"type": "array", "items": {"type": "object"}},
+        "logic_units": {"type": "array", "items": {"$ref": "#/$defs/logicUnit"}}
+      }
+    },
+    "frontend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "registration_function", "frontend_member"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "name": {"type": "string"},
+        "registration_function": {"type": "string"},
+        "frontend_member": {"type": ["string", "null"]}
+      }
+    },
+    "logicUnit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "order", "kind", "meta_op", "callback_context", "applies_to_frontends", "depends_on", "behavior", "api_refs", "meta_impl", "source_spans"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "order": {"type": "integer", "minimum": 1},
+        "kind": {"enum": ["entry_filter", "value_modeling", "state_modeling", "constraint_reasoning", "detection", "state_transition", "reporting", "lifecycle_cleanup", "escape_handling", "utility"]},
+        "meta_op": {"type": "string", "minLength": 1},
+        "callback_context": {"$ref": "#/$defs/stringArray"},
+        "applies_to_frontends": {"type": "array", "items": {"$ref": "#/$defs/id"}},
+        "depends_on": {"type": "array", "items": {"$ref": "#/$defs/id"}},
+        "behavior": {"$ref": "#/$defs/behavior"},
+        "api_refs": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["id", "qualified_name"], "properties": {"id": {"$ref": "#/$defs/id"}, "qualified_name": {"type": "string"}}}},
+        "meta_impl": {"type": "string"},
+        "source_spans": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/sourceSpan"}}
+      }
+    },
+    "behavior": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["preconditions", "state_reads", "state_writes", "transitions", "reports"],
+      "properties": {
+        "preconditions": {"$ref": "#/$defs/stringArray"},
+        "state_reads": {"$ref": "#/$defs/stringArray"},
+        "state_writes": {"$ref": "#/$defs/stringArray"},
+        "transitions": {"$ref": "#/$defs/stringArray"},
+        "reports": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "sourceSpan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "symbol", "file", "start_line", "end_line"],
+      "properties": {
+        "role": {"type": "string"},
+        "symbol": {"type": "string"},
+        "file": {"type": "string"},
+        "start_line": {"type": "integer", "minimum": 1},
+        "end_line": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}
+

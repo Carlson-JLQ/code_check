@@ -1,0 +1,22 @@
+/home/checker/code_check/result-generation-second-rule/csa/no-else-branch/first_checker/negative_case_1/round_1/workspace/GeneratedNoElseBranchChecker.cpp:25:63: error: no member named 'getParentIf' in 'clang::IfStmt'
+   25 |     while (const auto *Parent = dyn_cast_or_null<IfStmt>(Top->getParentIf())) {
+      |                                                          ~~~  ^
+/home/checker/code_check/result-generation-second-rule/csa/no-else-branch/first_checker/negative_case_1/round_1/workspace/GeneratedNoElseBranchChecker.cpp:87:37: error: cannot initialize a parameter of type 'AnalysisDeclContext *' with an lvalue of type 'const AnalysisDeclContext *'
+   87 |         checkStmtForMissingElse(If, ACD, BR);
+      |                                     ^~~
+/home/checker/code_check/result-generation-second-rule/csa/no-else-branch/first_checker/negative_case_1/round_1/workspace/GeneratedNoElseBranchChecker.cpp:42:68: note: passing argument to parameter 'ADC' here
+   42 |   void checkStmtForMissingElse(const Stmt *S, AnalysisDeclContext *ADC,
+      |                                                                    ^
+/home/checker/code_check/result-generation-second-rule/csa/no-else-branch/first_checker/negative_case_1/round_1/workspace/GeneratedNoElseBranchChecker.cpp:92:42: error: cannot initialize a parameter of type 'AnalysisDeclContext *' with an lvalue of type 'const AnalysisDeclContext *'
+   92 |           checkStmtForMissingElse(SubIf, ACD, BR);
+      |                                          ^~~
+/home/checker/code_check/result-generation-second-rule/csa/no-else-branch/first_checker/negative_case_1/round_1/workspace/GeneratedNoElseBranchChecker.cpp:42:68: note: passing argument to parameter 'ADC' here
+   42 |   void checkStmtForMissingElse(const Stmt *S, AnalysisDeclContext *ADC,
+      |                                                                    ^
+/home/checker/code_check/result-generation-second-rule/csa/no-else-branch/first_checker/negative_case_1/round_1/workspace/GeneratedNoElseBranchChecker.cpp:99:39: error: cannot initialize a parameter of type 'AnalysisDeclContext *' with an lvalue of type 'const AnalysisDeclContext *'
+   99 |           checkStmtForMissingElse(If, ACD, BR);
+      |                                       ^~~
+/home/checker/code_check/result-generation-second-rule/csa/no-else-branch/first_checker/negative_case_1/round_1/workspace/GeneratedNoElseBranchChecker.cpp:42:68: note: passing argument to parameter 'ADC' here
+   42 |   void checkStmtForMissingElse(const Stmt *S, AnalysisDeclContext *ADC,
+      |                                                                    ^
+4 errors generated.

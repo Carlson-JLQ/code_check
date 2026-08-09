@@ -1,0 +1,19 @@
+/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_7/round_1/workspace/GeneratedNoElseBranchChecker.cpp:63:28: error: allocating an object of abstract class type 'BugReport'
+   63 |         BugReport *R = new BugReport(BT, BT.getDescription(), PDL);
+      |                            ^
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugReporter.h:173:34: note: unimplemented pure virtual method 'getLocation' in 'BugReport'
+  173 |   virtual PathDiagnosticLocation getLocation() const = 0;
+      |                                  ^
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugReporter.h:178:23: note: unimplemented pure virtual method 'getDeclWithIssue' in 'BugReport'
+  178 |   virtual const Decl *getDeclWithIssue() const = 0;
+      |                       ^
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugReporter.h:189:34: note: unimplemented pure virtual method 'getUniqueingLocation' in 'BugReport'
+  189 |   virtual PathDiagnosticLocation getUniqueingLocation() const = 0;
+      |                                  ^
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugReporter.h:195:23: note: unimplemented pure virtual method 'getUniqueingDecl' in 'BugReport'
+  195 |   virtual const Decl *getUniqueingDecl() const = 0;
+      |                       ^
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugReporter.h:248:16: note: unimplemented pure virtual method 'Profile' in 'BugReport'
+  248 |   virtual void Profile(llvm::FoldingSetNodeID& hash) const = 0;
+      |                ^
+1 error generated.

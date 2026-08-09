@@ -49,3 +49,5 @@ codeql-linux64.zip
 *.class
 *.pyc
 __pycache__/
+
+../llvm-build

@@ -1,0 +1,19 @@
+/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_6/round_2/workspace/GeneratedNoElseBranchChecker.cpp:77:28: error: no template named 'ConstStmtVisitor'
+   77 |     struct Walker : public ConstStmtVisitor<Walker> {
+      |                            ^
+/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_6/round_2/workspace/GeneratedNoElseBranchChecker.cpp:91:13: error: use of undeclared identifier 'Visit'
+   91 |             Visit(Child);
+      |             ^~~~~
+/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_6/round_2/workspace/GeneratedNoElseBranchChecker.cpp:116:71: error: no member named 'getErrorNode' in 'clang::ento::BugReporter'
+  116 |               BT, "禁止省略 if-else if 语句的 else 分支", BR.getErrorNode(Checker->BT->getCheckerManager().getContext().getState()),
+      |                                                           ~~ ^
+/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_6/round_2/workspace/GeneratedNoElseBranchChecker.cpp:116:97: error: no member named 'getCheckerManager' in 'clang::ento::BugType'
+  116 |               BT, "禁止省略 if-else if 语句的 else 分支", BR.getErrorNode(Checker->BT->getCheckerManager().getContext().getState()),
+      |                                                                           ~~~~~~~~~~~~~^
+/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_6/round_2/workspace/GeneratedNoElseBranchChecker.cpp:124:11: error: use of undeclared identifier 'Visit'
+  124 |           Visit(Else);
+      |           ^~~~~
+/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_6/round_2/workspace/GeneratedNoElseBranchChecker.cpp:129:7: error: no member named 'Visit' in 'Walker'
+  129 |     W.Visit(Body);
+      |     ~ ^
+6 errors generated.

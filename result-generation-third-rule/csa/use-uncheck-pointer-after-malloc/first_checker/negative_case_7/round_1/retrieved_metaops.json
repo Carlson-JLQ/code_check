@@ -1,0 +1,278 @@
+[
+  {
+    "checker_id": "checker:6e8ffa295564d2873b883c5c",
+    "implementation_class": "MallocChecker",
+    "summary": "Model dynamic-memory ownership to detect leaks, invalid frees, double frees, use-after-free, and tainted allocation sizes.",
+    "analysis_mode": "path_sensitive",
+    "frontends": [
+      {
+        "id": "frontend:06f69d363efa4ce08f748e88",
+        "name": "Malloc",
+        "registration_function": "ento::registerMallocChecker",
+        "frontend_member": "MallocChecker"
+      },
+      {
+        "id": "frontend:adb829186e42f7350171e28e",
+        "name": "NewDelete",
+        "registration_function": "ento::registerNewDeleteChecker",
+        "frontend_member": "NewDeleteChecker"
+      },
+      {
+        "id": "frontend:fbf7126932cb777361353b6d",
+        "name": "TaintedAlloc",
+        "registration_function": "ento::registerTaintedAllocChecker",
+        "frontend_member": "TaintedAllocChecker"
+      }
+    ],
+    "callbacks": [
+      "MallocChecker::checkLocation"
+    ],
+    "kind": "detection",
+    "meta_op": "Read RegionState on memory access and report use of a released allocation.",
+    "behavior": {
+      "preconditions": [],
+      "state_reads": [
+        "RegionState[accessed symbol]"
+      ],
+      "state_writes": [],
+      "transitions": [],
+      "reports": [
+        "Use of memory after it is freed"
+      ]
+    },
+    "meta_impl": "void MallocChecker::checkLocation(SVal l, bool isLoad, const Stmt *S,\n                                  CheckerContext &C) const {\n  SymbolRef Sym = l.getLocSymbolInBase();\n  if (Sym) {\n    checkUseAfterFree(Sym, C, S);\n    checkUseZeroAllocated(Sym, C, S);\n  }\n\nvoid MallocChecker::HandleUseAfterFree(CheckerContext &C, SourceRange Range,\n                                       SymbolRef Sym) const {\n  const UseFree *Frontend = getRelevantFrontendAs<UseFree>(C, Sym);\n  if (!Frontend)\n    return;\n  if (!Frontend->isEnabled()) {\n    C.addSink();\n    return;\n  }",
+    "source_spans": [
+      {
+        "role": "callback_segment",
+        "symbol": "MallocChecker::checkLocation",
+        "file": "clang/lib/StaticAnalyzer/Checkers/MallocChecker.cpp",
+        "start_line": 3668,
+        "end_line": 3674
+      },
+      {
+        "role": "report_helper",
+        "symbol": "MallocChecker::HandleUseAfterFree",
+        "file": "clang/lib/StaticAnalyzer/Checkers/MallocChecker.cpp",
+        "start_line": 2798,
+        "end_line": 2806
+      }
+    ],
+    "api_refs": [
+      {
+        "id": "api:580faeb0c4c90b1b2c353a9c",
+        "qualified_name": "clang::ento::ProgramState::get"
+      },
+      {
+        "id": "api:8914c5ed6dc0f00387b69627",
+        "qualified_name": "clang::ento::CheckerContext::emitReport"
+      }
+    ],
+    "depends_on": [
+      "metaop:755cd4eed00d6aa938b1493d"
+    ],
+    "_embedding_id": "metaop:0c42cf4c9057aa4b060de371",
+    "_similarity": 0.769229531288147,
+    "_retrieval": "embedding"
+  },
+  {
+    "checker_id": "checker:6e8ffa295564d2873b883c5c",
+    "implementation_class": "MallocChecker",
+    "summary": "Model dynamic-memory ownership to detect leaks, invalid frees, double frees, use-after-free, and tainted allocation sizes.",
+    "analysis_mode": "path_sensitive",
+    "frontends": [
+      {
+        "id": "frontend:06f69d363efa4ce08f748e88",
+        "name": "Malloc",
+        "registration_function": "ento::registerMallocChecker",
+        "frontend_member": "MallocChecker"
+      },
+      {
+        "id": "frontend:adb829186e42f7350171e28e",
+        "name": "NewDelete",
+        "registration_function": "ento::registerNewDeleteChecker",
+        "frontend_member": "NewDeleteChecker"
+      },
+      {
+        "id": "frontend:57d20d71e6adfd69d4ec7b73",
+        "name": "MismatchedDeallocator",
+        "registration_function": "ento::registerMismatchedDeallocatorChecker",
+        "frontend_member": "MismatchedDeallocatorChecker"
+      }
+    ],
+    "callbacks": [
+      "MallocChecker::checkPreCall"
+    ],
+    "kind": "state_transition",
+    "meta_op": "Validate a deallocation and mark the released symbol in RegionState.",
+    "behavior": {
+      "preconditions": [],
+      "state_reads": [
+        "RegionState[released symbol]"
+      ],
+      "state_writes": [
+        "RegionState[released symbol] = released"
+      ],
+      "transitions": [],
+      "reports": []
+    },
+    "meta_impl": "MallocChecker::FreeMemAux(CheckerContext &C, const Expr *ArgExpr,\n                          const CallEvent &Call, ProgramStateRef State,\n                          bool Hold, bool &IsKnownToBeAllocated,\n                          AllocationFamily Family, bool ReturnsNullOnFailure,\n                          std::optional<SVal> ArgValOpt) const {\n\n  if (!State)\n    return nullptr;\n\n  SVal ArgVal = ArgValOpt.value_or(C.getSVal(ArgExpr));\n  if (!isa<DefinedOrUnknownSVal>(ArgVal))\n    return nullptr;\n  DefinedOrUnknownSVal location = ArgVal.castAs<DefinedOrUnknownSVal>();\n\n  // Check for null dereferences.\n  if (!isa<Loc>(location))\n    return nullptr;\n\n  // The explicit NULL case, no operation is performed.\n  ProgramStateRef notNullState, nullState;\n  std::tie(notNullState, nullState) = State->assume(location);\n  if (nullState && !notNullState)\n    return nullptr;\n\n  // Unknown values could easily be okay\n  // Undefined values are handled elsewhere\n  if (ArgVal.isUnknownOrUndef())\n    return nullptr;\n\n  const MemRegion *R = ArgVal.getAsRegion();\n  const Expr *ParentExpr = Call.getOriginExpr();\n\n  // NOTE: We detected a bug, but the checker under whose name we would emit the\n  // error c",
+    "source_spans": [
+      {
+        "role": "helper",
+        "symbol": "MallocChecker::FreeMemAux",
+        "file": "clang/lib/StaticAnalyzer/Checkers/MallocChecker.cpp",
+        "start_line": 2315,
+        "end_line": 2974
+      }
+    ],
+    "api_refs": [
+      {
+        "id": "api:1523abd1f161565ea1668250",
+        "qualified_name": "clang::ento::ProgramState::set"
+      },
+      {
+        "id": "api:580faeb0c4c90b1b2c353a9c",
+        "qualified_name": "clang::ento::ProgramState::get"
+      }
+    ],
+    "depends_on": [
+      "metaop:97f65925f14ff701701ae673"
+    ],
+    "_embedding_id": "metaop:755cd4eed00d6aa938b1493d",
+    "_similarity": 0.7677633762359619,
+    "_retrieval": "embedding"
+  },
+  {
+    "checker_id": "checker:6e8ffa295564d2873b883c5c",
+    "implementation_class": "MallocChecker",
+    "summary": "Model dynamic-memory ownership to detect leaks, invalid frees, double frees, use-after-free, and tainted allocation sizes.",
+    "analysis_mode": "path_sensitive",
+    "frontends": [
+      {
+        "id": "frontend:06f69d363efa4ce08f748e88",
+        "name": "Malloc",
+        "registration_function": "ento::registerMallocChecker",
+        "frontend_member": "MallocChecker"
+      },
+      {
+        "id": "frontend:adb829186e42f7350171e28e",
+        "name": "NewDelete",
+        "registration_function": "ento::registerNewDeleteChecker",
+        "frontend_member": "NewDeleteChecker"
+      },
+      {
+        "id": "frontend:6d020c6bb3d198f9e93fbc02",
+        "name": "NewDeleteLeaks",
+        "registration_function": "ento::registerNewDeleteLeaksChecker",
+        "frontend_member": "NewDeleteLeaksChecker"
+      },
+      {
+        "id": "frontend:57d20d71e6adfd69d4ec7b73",
+        "name": "MismatchedDeallocator",
+        "registration_function": "ento::registerMismatchedDeallocatorChecker",
+        "frontend_member": "MismatchedDeallocatorChecker"
+      },
+      {
+        "id": "frontend:fbf7126932cb777361353b6d",
+        "name": "TaintedAlloc",
+        "registration_function": "ento::registerTaintedAllocChecker",
+        "frontend_member": "TaintedAllocChecker"
+      }
+    ],
+    "callbacks": [
+      "MallocChecker::checkPreCall"
+    ],
+    "kind": "entry_filter",
+    "meta_op": "Dispatch recognized deallocation and allocation calls to checker-local models.",
+    "behavior": {
+      "preconditions": [],
+      "state_reads": [],
+      "state_writes": [],
+      "transitions": [],
+      "reports": []
+    },
+    "meta_impl": "void MallocChecker::checkPreCall(const CallEvent &Call,\n                                 CheckerContext &C) const {\n\n  if (const auto *DC = dyn_cast<CXXDeallocatorCall>(&Call)) {\n    const CXXDeleteExpr *DE = DC->getOriginExpr();\n\n    // FIXME: I don't see a good reason for restricting the check against\n    // use-after-free violations to the case when NewDeleteChecker is disabled.\n    // (However, if NewDeleteChecker is enabled, perhaps it would be better to\n    // do this check a bit later?)\n    if (!NewDeleteChecker.isEnabled())\n      if (SymbolRef Sym = C.getSVal(DE->getArgument()).getAsSymbol())\n        checkUseAfterFree(Sym, C, DE->getArgument());\n\n    if (!isStandardNewDelete(DC->getDecl()))\n      return;\n\n    ProgramStateRef State = C.getState();\n    bool IsKnownToBeAllocated;\n    State = FreeMemAux(\n        C, DE->getArgument(), Call, State,\n        /*Hold*/ false, IsKnownToBeAllocated,\n        AllocationFamily(DE->isArrayForm() ? AF_CXXNewArray : AF_CXXNew));\n\n    C.addTransition(State);\n    return;\n  }",
+    "source_spans": [
+      {
+        "role": "callback_segment",
+        "symbol": "MallocChecker::checkPreCall",
+        "file": "clang/lib/StaticAnalyzer/Checkers/MallocChecker.cpp",
+        "start_line": 3445,
+        "end_line": 3471
+      }
+    ],
+    "api_refs": [],
+    "depends_on": [],
+    "_embedding_id": "metaop:97f65925f14ff701701ae673",
+    "_similarity": 0.7503995895385742,
+    "_retrieval": "embedding"
+  },
+  {
+    "checker_id": "checker:6e8ffa295564d2873b883c5c",
+    "implementation_class": "MallocChecker",
+    "summary": "Model dynamic-memory ownership to detect leaks, invalid frees, double frees, use-after-free, and tainted allocation sizes.",
+    "analysis_mode": "path_sensitive",
+    "frontends": [
+      {
+        "id": "frontend:06f69d363efa4ce08f748e88",
+        "name": "Malloc",
+        "registration_function": "ento::registerMallocChecker",
+        "frontend_member": "MallocChecker"
+      },
+      {
+        "id": "frontend:6d020c6bb3d198f9e93fbc02",
+        "name": "NewDeleteLeaks",
+        "registration_function": "ento::registerNewDeleteLeaksChecker",
+        "frontend_member": "NewDeleteLeaksChecker"
+      }
+    ],
+    "callbacks": [
+      "MallocChecker::checkDeadSymbols"
+    ],
+    "kind": "lifecycle_cleanup",
+    "meta_op": "Collect allocated dead symbols as leaks and remove dead allocation state.",
+    "behavior": {
+      "preconditions": [],
+      "state_reads": [
+        "RegionState entries"
+      ],
+      "state_writes": [
+        "remove dead allocation state"
+      ],
+      "transitions": [],
+      "reports": [
+        "memory leak"
+      ]
+    },
+    "meta_impl": "void MallocChecker::checkDeadSymbols(SymbolReaper &SymReaper,\n                                     CheckerContext &C) const\n{\n  ProgramStateRef state = C.getState();\n  RegionStateTy OldRS = state->get<RegionState>();\n  RegionStateTy::Factory &F = state->get_context<RegionState>();\n\n  RegionStateTy RS = OldRS;\n  SmallVector<SymbolRef, 2> Errors;\n  for (auto [Sym, State] : RS) {\n    if (SymReaper.isDead(Sym)) {\n      if (State.isAllocated() || State.isAllocatedOfSizeZero())\n        Errors.push_back(Sym);\n      // Remove the dead symbol from the map.\n      RS = F.remove(RS, Sym);\n    }\n  }\n\n  if (RS == OldRS) {\n    // We shouldn't have touched other maps yet.\n    assert(state->get<ReallocPairs>() ==\n           C.getState()->get<ReallocPairs>());\n    assert(state->get<FreeReturnValue>() ==\n           C.getState()->get<FreeReturnValue>());\n    return;\n  }\n\n  // Cleanup the Realloc Pairs Map.\n  ReallocPairsTy RP = state->get<ReallocPairs>();\n  for (auto [Sym, ReallocPair] : RP) {\n    if (SymReaper.isDead(Sym) || SymReaper.isDead(ReallocPair.ReallocatedSym)) {\n      state = state->remove<ReallocPairs>(Sym);\n    }\n  }\n\n  // Cleanup the FreeReturnValue Map.\n  FreeReturnValueTy FR = state->g",
+    "source_spans": [
+      {
+        "role": "callback_segment",
+        "symbol": "MallocChecker::checkDeadSymbols",
+        "file": "clang/lib/StaticAnalyzer/Checkers/MallocChecker.cpp",
+        "start_line": 3132,
+        "end_line": 3469
+      }
+    ],
+    "api_refs": [
+      {
+        "id": "api:432eb5b9ff50440a0794eb99",
+        "qualified_name": "clang::ento::SymbolReaper::isDead"
+      },
+      {
+        "id": "api:4db73b63e0c13374bd4f2d68",
+        "qualified_name": "clang::ento::ProgramState::remove"
+      },
+      {
+        "id": "api:2669ca957a0ccf39ad92c422",
+        "qualified_name": "clang::ento::CheckerContext::addTransition"
+      }
+    ],
+    "depends_on": [
+      "metaop:ab94c1766baa204d15b85804"
+    ],
+    "_embedding_id": "metaop:72d54c7d67e9a0cbaf78dcc9",
+    "_similarity": 0.7496321201324463,
+    "_retrieval": "embedding"
+  }
+]

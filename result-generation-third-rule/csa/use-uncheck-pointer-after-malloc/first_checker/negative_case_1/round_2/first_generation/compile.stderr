@@ -1,0 +1,10 @@
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_1/round_2/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:44:54: error: no member named 'getManager' in 'clang::SourceLocation'
+   44 |     return E->isNullPointerConstant(*E->getExprLoc().getManager(),
+      |                                      ~~~~~~~~~~~~~~~ ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_1/round_2/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:323:49: error: too few arguments to function call, single argument 'D' was not specified
+  323 |     analyzeStmt(Body, AM.getAnalysisDeclContext(), BR, States, Reported);
+      |                       ~~~~~~~~~~~~~~~~~~~~~~~~~ ^
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/PathSensitive/AnalysisManager.h:122:24: note: 'getAnalysisDeclContext' declared here
+  122 |   AnalysisDeclContext *getAnalysisDeclContext(const Decl *D) {
+      |                        ^                      ~~~~~~~~~~~~~
+2 errors generated.

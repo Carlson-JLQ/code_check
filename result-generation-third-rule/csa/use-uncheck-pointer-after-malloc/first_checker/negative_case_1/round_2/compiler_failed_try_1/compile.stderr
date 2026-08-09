@@ -1,0 +1,4 @@
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_1/round_2/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:43:52: error: no member named 'getExprClass' in 'clang::Expr'
+   43 |                                                 E->getExprClass(),
+      |                                                 ~  ^
+1 error generated.

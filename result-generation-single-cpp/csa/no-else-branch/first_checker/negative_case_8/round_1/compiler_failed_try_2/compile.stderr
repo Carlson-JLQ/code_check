@@ -1,0 +1,29 @@
+In file included from /home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_8/round_1/workspace/GeneratedNoElseBranchChecker.cpp:1:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/Decl.h:16:
+In file included from /home/llvm/llvm-project/clang/include/clang/AST/APNumericStorage.h:12:
+In file included from /home/llvm/llvm-project/llvm/include/llvm/ADT/APFloat.h:19:
+In file included from /home/llvm/llvm-project/llvm/include/llvm/ADT/ArrayRef.h:12:
+In file included from /home/llvm/llvm-project/llvm/include/llvm/ADT/Hashing.h:56:
+In file included from /usr/lib/gcc/x86_64-linux-gnu/11/../../../../include/c++/11/memory:76:
+/usr/lib/gcc/x86_64-linux-gnu/11/../../../../include/c++/11/bits/unique_ptr.h:962:34: error: allocating an object of abstract class type 'clang::ento::BugReport'
+  962 |     { return unique_ptr<_Tp>(new _Tp(std::forward<_Args>(__args)...)); }
+      |                                  ^
+/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_8/round_1/workspace/GeneratedNoElseBranchChecker.cpp:65:19: note: in instantiation of function template specialization 'std::make_unique<clang::ento::BugReport, clang::ento::BugType &, const char (&)[46], clang::ento::PathDiagnosticLocation &>' requested here
+   65 |     auto R = std::make_unique<BugReport>(
+      |                   ^
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugReporter.h:173:34: note: unimplemented pure virtual method 'getLocation' in 'BugReport'
+  173 |   virtual PathDiagnosticLocation getLocation() const = 0;
+      |                                  ^
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugReporter.h:178:23: note: unimplemented pure virtual method 'getDeclWithIssue' in 'BugReport'
+  178 |   virtual const Decl *getDeclWithIssue() const = 0;
+      |                       ^
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugReporter.h:189:34: note: unimplemented pure virtual method 'getUniqueingLocation' in 'BugReport'
+  189 |   virtual PathDiagnosticLocation getUniqueingLocation() const = 0;
+      |                                  ^
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugReporter.h:195:23: note: unimplemented pure virtual method 'getUniqueingDecl' in 'BugReport'
+  195 |   virtual const Decl *getUniqueingDecl() const = 0;
+      |                       ^
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugReporter.h:248:16: note: unimplemented pure virtual method 'Profile' in 'BugReport'
+  248 |   virtual void Profile(llvm::FoldingSetNodeID& hash) const = 0;
+      |                ^
+1 error generated.

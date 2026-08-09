@@ -549,4 +549,3 @@ class CodeQL_CheckerGenerator(object):
         self.skipped_Test_Cases = skipped_Test_Cases if skipped_Test_Cases is not None else []
         self.RULE = rule
         self.result_dir = rule_result_dir
-

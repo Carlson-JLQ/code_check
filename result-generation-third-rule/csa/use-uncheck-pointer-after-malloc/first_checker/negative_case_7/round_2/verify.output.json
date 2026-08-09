@@ -1,0 +1,13 @@
+{
+  "case_path": "/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_6.cpp",
+  "case_type": "negative",
+  "expected_diagnostics": [
+    ":[[@LINE]]:9: warning: 禁止动态分配的指针变量未检查即使用"
+  ],
+  "actual_diagnostics": [],
+  "returncode": 0,
+  "stdout": "",
+  "stderr": "/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_6.cpp:13:1: warning: Potential leak of memory pointed to by 'p' [unix.Malloc]\n   13 | }\n      | ^\n/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_6.cpp:7:9: note: Assuming 'p' is not equal to NULL\n    7 |     if (p == NULL)\n      |         ^~~~~~~~~\n/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_6.cpp:7:5: note: Taking false branch\n    7 |     if (p == NULL)\n      |     ^\n/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_6.cpp:10:16: note: Memory is allocated\n   10 |     p = (int*) realloc(p, sizeof(int) * 2);\n      |                ^~~~~~~~~~~~~~~~~~~~~~~~~~~\n/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_6.cpp:13:1: note: Potential leak of memory pointed to by 'p'\n   13 | }\n      | ^\n1 warning generated.\n",
+  "success": false,
+  "failure_category": "false_negative"
+}

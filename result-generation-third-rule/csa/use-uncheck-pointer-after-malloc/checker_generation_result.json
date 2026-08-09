@@ -1,0 +1,60 @@
+{
+  "stage": "A+B",
+  "rule": "use-uncheck-pointer-after-malloc",
+  "rule_id": "gjb8114-r-1-3-8",
+  "checker": "GeneratedUseUncheckPointerAfterMallocChecker",
+  "frontend": "gjb8114.UseUncheckPointerAfterMalloc",
+  "initial_case": null,
+  "negative_case_amount": 10,
+  "positive_case_amount": 10,
+  "success_case_list": [],
+  "failed_case_list": [],
+  "performance": "0/0",
+  "compile_success": false,
+  "initial_case_success": false,
+  "all_cases_success": false,
+  "augmentation_started": false,
+  "generation_attempts": 20,
+  "compile_attempts": 39,
+  "augmentation_attempts": 0,
+  "skipped_cases": [
+    "/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_1.cpp",
+    "/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_10.cpp",
+    "/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_2.cpp",
+    "/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_3.cpp",
+    "/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_4.cpp",
+    "/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_5.cpp",
+    "/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_6.cpp",
+    "/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_7.cpp",
+    "/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_8.cpp",
+    "/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_9.cpp"
+  ],
+  "termination_reason": "initial_generation_failed",
+  "checker_versions": [],
+  "total_cost": null,
+  "cost_note": "not calculated: model pricing is not configured",
+  "token_usage": {
+    "prompt_tokens": 1589766,
+    "completion_tokens": 130659,
+    "total_tokens": 1720425
+  },
+  "llm_model": "gpt-5.4-mini",
+  "retrieval": {
+    "mode": "embedding",
+    "model": "BAAI/bge-large-en-v1.5",
+    "cache_dir": "/home/checker/code_check/src/embedding_db/csa",
+    "metaop_records": 18,
+    "api_records": 2618,
+    "dimensions": 1024,
+    "cache_hit": true,
+    "fingerprint": {
+      "format_version": 1,
+      "model": "BAAI/bge-large-en-v1.5",
+      "metaop_sha256": "3ae6e2f3c9af4a8589ac9788f6b350feda3e19e0cdc27ff1a594d7ad1ae9ed48",
+      "api_sha256": "7e098ca5bfc2d4a89a1b757581d3e5d7d458a2a3c07f4de25ad8ed233d0f4b67"
+    }
+  },
+  "initial_generation_source": null,
+  "llm_failure_amount": 0,
+  "llm_failures": []
+}

@@ -1,0 +1,21 @@
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_2/round_2/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:41:38: error: no member named 'getASTContext' in 'clang::Expr'
+   41 |          E->isNullPointerConstant(E->getASTContext(),
+      |                                   ~  ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_2/round_2/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:124:9: error: no matching constructor for initialization of 'BugType'
+  124 |         BugType(VD->getASTContext().getSourceManager().getDiagnostics(),
+      |         ^       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  125 |                 "Generated GJB8114 violation", "GJB8114"),
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugType.h:45:3: note: candidate constructor not viable: no known conversion from 'DiagnosticsEngine' to 'CheckerNameRef' for 1st argument
+   45 |   BugType(CheckerNameRef CheckerName, StringRef Desc,
+      |   ^       ~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugType.h:52:3: note: candidate constructor not viable: no known conversion from 'DiagnosticsEngine' to 'const CheckerFrontend *' for 1st argument
+   52 |   BugType(const CheckerFrontend *Checker, StringRef Desc,
+      |   ^       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/BugReporter/BugType.h:28:7: note: candidate constructor (the implicit copy constructor) not viable: requires 1 argument, but 3 were provided
+   28 | class BugType {
+      |       ^~~~~~~
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_2/round_2/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:202:5: warning: add explicit braces to avoid dangling else [-Wdangling-else]
+  202 |     else if (const BinaryOperator *BO = dyn_cast<BinaryOperator>(Cond)) {
+      |     ^
+1 warning and 2 errors generated.

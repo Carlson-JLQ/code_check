@@ -1,0 +1,26 @@
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_8/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:75:9: error: no member named 'NPC_ValueDependentIsNotNull' in 'clang::ASTContext'; did you mean 'clang::AbstractConditionalOperator::NPC_ValueDependentIsNotNull'?
+   75 |         ASTContext::NPC_ValueDependentIsNotNull);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |         clang::AbstractConditionalOperator::NPC_ValueDependentIsNotNull
+/home/llvm/llvm-project/clang/include/clang/AST/Expr.h:841:5: note: 'clang::AbstractConditionalOperator::NPC_ValueDependentIsNotNull' declared here
+  841 |     NPC_ValueDependentIsNotNull
+      |     ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_8/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:75:48: error: too few arguments to function call, expected 2, have 1
+   74 |     return E->isNullPointerConstant(
+      |            ~~~~~~~~~~~~~~~~~~~~~~~~
+   75 |         ASTContext::NPC_ValueDependentIsNotNull);
+      |                                                ^
+/home/llvm/llvm-project/clang/include/clang/AST/Expr.h:847:27: note: 'isNullPointerConstant' declared here
+  847 |   NullPointerConstantKind isNullPointerConstant(
+      |                           ^
+  848 |       ASTContext &Ctx,
+      |       ~~~~~~~~~~~~~~~~
+  849 |       NullPointerConstantValueDependence NPC) const;
+      |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_8/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:93:39: error: unknown type name 'Binar'
+   93 |     const auto *BO = dyn_cast_or_null<Binar yOperator>(S);
+      |                                       ^
+/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_8/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:93:45: error: type-id cannot have a name
+   93 |     const auto *BO = dyn_cast_or_null<Binar yOperator>(S);
+      |                                             ^~~~~~~~~
+4 errors generated.

@@ -1,0 +1,14 @@
+{
+  "case_path": "/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_5.cpp",
+  "case_type": "negative",
+  "expected_diagnostics": [
+    ":[[@LINE]]:9: warning: 禁止动态分配的指针变量未检查即使用",
+    ":[[@LINE]]:9: warning: 禁止动态分配的指针变量未检查即使用"
+  ],
+  "actual_diagnostics": [],
+  "returncode": 0,
+  "stdout": "",
+  "stderr": "/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_5.cpp:10:11: warning: Potential leak of memory pointed to by 'pa' [unix.Malloc]\n   10 |     pb[0] = 3;\n      |           ^\n/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_5.cpp:5:17: note: Memory is allocated\n    5 |     pa = (int*) malloc(sizeof(int) * 2);\n      |                 ^~~~~~~~~~~~~~~~~~~~~~~\n/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_5.cpp:10:11: note: Potential leak of memory pointed to by 'pa'\n   10 |     pb[0] = 3;\n      |           ^\n/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_5.cpp:13:1: warning: Potential leak of memory pointed to by 'pb' [unix.Malloc]\n   13 | }\n      | ^\n/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_5.cpp:6:22: note: Memory is allocated\n    6 |     int *pb = (int*) malloc(sizeof(int) * 2);\n      |                      ^~~~~~~~~~~~~~~~~~~~~~~\n/home/checker/code_check/experiment/gjb8114/codeql_test_case/use_uncheck_pointer_after_malloc/use_uncheck_pointer_after_malloc_case_5.cpp:13:1: note: Potential leak of memory pointed to by 'pb'\n   13 | }\n      | ^\n2 warnings generated.\n",
+  "success": false,
+  "failure_category": "false_negative"
+}

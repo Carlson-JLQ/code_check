@@ -1,0 +1,10 @@
+/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_4/round_2/workspace/GeneratedNoElseBranchChecker.cpp:19:38: error: calling a private constructor of class 'clang::ento::CheckerNameRef'
+   19 |       BT = std::make_unique<BugType>(CheckerNameRef("gjb8114.NoElseBranch"),
+      |                                      ^
+/home/llvm/llvm-project/clang/include/clang/StaticAnalyzer/Core/CheckerManager.h:111:12: note: implicitly declared private here
+  111 |   explicit CheckerNameRef(StringRef Name) : Name(Name) {}
+      |            ^
+/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_4/round_2/workspace/GeneratedNoElseBranchChecker.cpp:53:35: error: no member named 'getStackFrame' in 'clang::ASTContext'
+   53 |                   BR.getContext().getStackFrame()));
+      |                   ~~~~~~~~~~~~~~~ ^
+2 errors generated.
