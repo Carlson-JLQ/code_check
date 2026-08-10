@@ -1,0 +1,14 @@
+{
+  "rule": "use-uncheck-pointer-after-malloc",
+  "checker": "GeneratedUseUncheckPointerAfterMallocChecker",
+  "frontend": "gjb8114.UseUncheckPointerAfterMalloc",
+  "rule_id": "gjb8114-r-1-3-8",
+  "diagnostic": ":[[@LINE]]:9: warning: 禁止动态分配的指针变量未检查即使用",
+  "passed": 20,
+  "total": 20,
+  "negatives": 10,
+  "positives": 10,
+  "failures": [],
+  "source": "result-exp/04-uncheck-retry/csa/use-uncheck-pointer-after-malloc/augmentation/accepted_versions/version_3/checker.cpp",
+  "plugin": "result-exp/04-uncheck-retry/csa/use-uncheck-pointer-after-malloc/augmentation/accepted_versions/version_3/plugin.so"
+}

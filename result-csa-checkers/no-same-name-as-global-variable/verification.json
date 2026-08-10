@@ -1,0 +1,14 @@
+{
+  "rule": "no-same-name-as-global-variable",
+  "checker": "GeneratedNoSameNameAsGlobalVariableChecker",
+  "frontend": "gjb8114.NoSameNameAsGlobalVariable",
+  "rule_id": "gjb8114-r-1-13-1",
+  "diagnostic": "禁止局部变量与全局变量同名",
+  "passed": 20,
+  "total": 20,
+  "negatives": 10,
+  "positives": 10,
+  "failures": [],
+  "source": "result-exp/03-gpt55/csa/no-same-name-as-global-variable/first_checker/generated_checker.cpp",
+  "plugin": "result-exp/03-gpt55/csa/no-same-name-as-global-variable/first_checker/negative_case_1/round_1/workspace/GeneratedNoSameNameAsGlobalVariableChecker.so"
+}

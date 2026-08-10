@@ -1,0 +1,14 @@
+{
+  "rule": "prohibit-non-local-variable-in-for-loop",
+  "checker": "GeneratedProhibitNonLocalVariableInForLoopChecker",
+  "frontend": "gjb8114.ProhibitNonLocalVariableInForLoop",
+  "rule_id": "gjb8114-r-1-9-1",
+  "diagnostic": "禁止 for 循环控制变量使用非局部变量",
+  "passed": 20,
+  "total": 20,
+  "negatives": 10,
+  "positives": 10,
+  "failures": [],
+  "source": "result-exp/03-gpt55/csa/prohibit-non-local-variable-in-for-loop/first_checker/generated_checker.cpp",
+  "plugin": "result-exp/03-gpt55/csa/prohibit-non-local-variable-in-for-loop/first_checker/negative_case_1/round_1/workspace/GeneratedProhibitNonLocalVariableInForLoopChecker.so"
+}

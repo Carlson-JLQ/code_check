@@ -10,10 +10,19 @@ import urllib.request
 from pathlib import Path
 from types import SimpleNamespace
 
-DEFAULT_CSA_LLM_MODEL = "gpt-5.4-mini"
+DEFAULT_CSA_LLM_MODEL = "gpt-5.5"
+
+SYSTEM_PROMPT = (
+    "You are a Clang Static Analyzer plugin engineer. You write single-file "
+    "dynamic checker plugins that compile against the LLVM headers on the "
+    "first try, and you never invent clang API members you are not certain "
+    "exist."
+)
+
 
 class CSAChatClient:
-    def __init__(self, base_url, api_key, model=DEFAULT_CSA_LLM_MODEL, timeout=240):
+    def __init__(self, base_url, api_key, model=DEFAULT_CSA_LLM_MODEL, timeout=900,
+                 temperature=0, max_tokens=32768, system_prompt=SYSTEM_PROMPT):
         normalized = str(base_url).rstrip("/")
         if not re.search(r"/v\d+(?:/|$)", normalized):
             normalized += "/v1"
@@ -22,14 +31,25 @@ class CSAChatClient:
         self.api_key = api_key
         self.model = model
         self.timeout = int(timeout)
+        self.temperature = temperature
+        self.max_tokens = int(max_tokens)
+        self.system_prompt = system_prompt
 
     def __call__(self, prompt):
-        payload = json.dumps({
+        messages = []
+        if self.system_prompt:
+            messages.append({"role": "system", "content": self.system_prompt})
+        messages.append({"role": "user", "content": prompt})
+        body = {
             "model": self.model,
-            "temperature": 0,
-            "max_tokens": 8192,
-            "messages": [{"role": "user", "content": prompt}],
-        }).encode("utf-8")
+            "max_tokens": self.max_tokens,
+            "messages": messages,
+        }
+        # Some reasoning models reject any explicit temperature. Omit the field
+        # rather than send a value the endpoint will refuse.
+        if self.temperature is not None:
+            body["temperature"] = self.temperature
+        payload = json.dumps(body).encode("utf-8")
         request = urllib.request.Request(
             self.url,
             data=payload,
@@ -78,4 +98,6 @@ def load_csa_chat_client(config_path, model=None):
         raise ValueError("CSA LLM API key is not configured")
     if not base_url:
         raise ValueError("CSA LLM base URL is not configured")
-    return CSAChatClient(base_url, api_key, selected_model)
+    return CSAChatClient(base_url, api_key, selected_model,
+                         timeout=int(os.getenv("CSA_LLM_TIMEOUT")
+                                     or config.get("timeout") or 900))

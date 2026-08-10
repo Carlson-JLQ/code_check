@@ -118,6 +118,10 @@ def _default_encoder(model_name_or_path: str):
     local_hf_home = Path(__file__).resolve().parents[1] / "retriever/embedding_model/huggingface"
     if local_hf_home.exists():
         os.environ.setdefault("HF_HOME", str(local_hf_home))
+        # The weights are already in that cache. Without this, every load on an
+        # air-gapped host burns ~20 minutes on HEAD requests that cannot
+        # succeed, once per rule. Set HF_HUB_OFFLINE=0 to force online.
+        os.environ.setdefault("HF_HUB_OFFLINE", "1")
     try:
         from sentence_transformers import SentenceTransformer
     except ImportError as exc:

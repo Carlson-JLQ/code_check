@@ -9,6 +9,7 @@ from csa_generator import (
     CSACheckerGenerator,
     expected_diagnostics,
     parse_generated_source,
+    parse_json_payload,
 )
 from entity.concreteProduct_CSA import Case_CSA, Checker_CSA, Rule_CSA
 from main_csa import load_cases, load_rule
@@ -55,6 +56,25 @@ class CSAGeneratorTest(unittest.TestCase):
                 Rule_CSA(), [skipped, selected, other], [skipped], root,
                 retrieval_mode="lexical")
             self.assertIs(generator.select_initial_case(), selected)
+
+    def test_initial_generation_records_only_configured_negative_candidate_budget(self):
+        with tempfile.TemporaryDirectory() as root:
+            cases = [self.case(root, f"n{i}.cpp", "// CHECK-MESSAGES: target\nint n(){return 0;}")
+                     for i in range(5)]
+            generator = CSACheckerGenerator(
+                Rule_CSA(), cases, rule_result_dir=root,
+                max_initial_negative_cases=3, max_round=1,
+                retrieval_mode="lexical")
+            with patch("csa_generator.compile_csa_checker", return_value=(1, "", "compile failed")):
+                success, _ = generator.first_checker_generation()
+            self.assertFalse(success)
+            self.assertEqual(len(generator.initial_candidate_results), 3)
+            output = json.loads((Path(root) / "csa/no-assignment-in-condition/checker_generation_result.json")
+                                .read_text(encoding="utf-8"))
+            self.assertEqual(output["performance"], "0/3")
+            self.assertEqual(output["initial_candidate_amount"], 3)
+            self.assertTrue(all(item["failure_category"] == "compile_failure"
+                                for item in output["failed_case_list"]))
 
     def test_expected_warning_parsers(self):
         self.assertEqual(expected_diagnostics(
@@ -134,6 +154,11 @@ class CSAGeneratorTest(unittest.TestCase):
         self.assertIn("check::ASTCodeBody", cpp)
         self.assertNotIn('GeneratedNoAssignmentInConditionChecker.h', cpp)
 
+    def test_augmentation_identity_does_not_require_literal_rule_text(self):
+        generator = CSACheckerGenerator(Rule_CSA(), [], retrieval_mode="lexical")
+        template = generator._template_source()
+        self.assertTrue(generator._checker_identity_valid(template))
+
     @patch("csa_generator.compile_csa_checker", side_effect=[
         (1, "", "first failure"), (0, "", "")])
     def test_compiler_failure_enters_bounded_repair_loop(self, compiler):
@@ -170,6 +195,133 @@ class CSAGeneratorTest(unittest.TestCase):
                 current, Path(root) / "positive")
             self.assertEqual(negative_candidate.generation_kind, "augmentation_negative")
             self.assertEqual(positive_candidate.generation_kind, "augmentation_positive")
+
+    def test_semantic_augmentation_accepts_strictly_improved_candidate(self):
+        with tempfile.TemporaryDirectory() as root:
+            negative = self.case(root, "n.cpp", "// CHECK-MESSAGES: target\nint n(){return 0;}")
+            positive = self.case(root, "p.cpp", "int p(){return 0;}")
+            generator = CSACheckerGenerator(
+                Rule_CSA(), [negative, positive], rule_result_dir=root,
+                max_augmentation_tries=1, retrieval_mode="lexical")
+            initial = Checker_CSA(
+                checker_code="initial", plugin_path=str(Path(root) / "initial.so"), version=1)
+            initial.set_passed_cases([positive])
+            candidate = Checker_CSA(
+                checker_code="improved", plugin_path=str(Path(root) / "candidate.so"), version=2,
+                generation_kind="augmentation_negative")
+            baseline = [
+                self._case_result(negative, False, "false_negative"),
+                self._case_result(positive, True),
+            ]
+            improved = [self._case_result(negative, True), self._case_result(positive, True)]
+            generator.generated = initial
+            generator.rule.add_checker(initial)
+            with patch.object(generator, "run_all_test_cases", side_effect=[baseline, improved]), \
+                    patch.object(generator, "_augment_candidate", return_value=candidate), \
+                    patch.object(generator, "_run_case", return_value=self._case_result(negative, True)):
+                result = generator.checker_augmentation(initial)
+            self.assertIs(result, candidate)
+            self.assertIs(generator.generated, candidate)
+            self.assertEqual(generator.accepted_augmentation_amount, 1)
+            self.assertEqual(generator.rollback_count, 0)
+            manifest = Path(root) / "csa/no-assignment-in-condition/augmentation/attempt_1/candidate_manifest.json"
+            self.assertEqual(json.loads(manifest.read_text(encoding="utf-8"))["status"], "accepted")
+
+    def test_later_regression_keeps_last_accepted_version(self):
+        with tempfile.TemporaryDirectory() as root:
+            first = self.case(root, "n1.cpp", "// CHECK-MESSAGES: target\nint n1(){return 0;}")
+            second = self.case(root, "n2.cpp", "// CHECK-MESSAGES: target\nint n2(){return 0;}")
+            positive = self.case(root, "p.cpp", "int p(){return 0;}")
+            generator = CSACheckerGenerator(
+                Rule_CSA(), [first, second, positive], rule_result_dir=root,
+                max_augmentation_tries=2, retrieval_mode="lexical")
+            initial = Checker_CSA(checker_code="v1", plugin_path="v1.so", version=1)
+            version_two = Checker_CSA(
+                checker_code="v2", plugin_path="v2.so", version=2,
+                generation_kind="augmentation_negative")
+            rejected_v3 = Checker_CSA(
+                checker_code="v3", plugin_path="v3.so", version=3,
+                generation_kind="augmentation_negative")
+            baseline = [
+                self._case_result(first, False, "false_negative"),
+                self._case_result(second, False, "false_negative"),
+                self._case_result(positive, True),
+            ]
+            v2_results = [
+                self._case_result(first, True),
+                self._case_result(second, False, "false_negative"),
+                self._case_result(positive, True),
+            ]
+            regressed_v3 = [
+                self._case_result(first, False, "false_negative"),
+                self._case_result(second, True),
+                self._case_result(positive, True),
+            ]
+            generator.generated = initial
+            generator.rule.add_checker(initial)
+            with patch.object(generator, "run_all_test_cases",
+                              side_effect=[baseline, v2_results, regressed_v3]), \
+                    patch.object(generator, "_augment_candidate",
+                                 side_effect=[version_two, rejected_v3]), \
+                    patch.object(generator, "_run_case",
+                                 side_effect=[self._case_result(first, True),
+                                              self._case_result(second, True)]):
+                result = generator.checker_augmentation(initial)
+            self.assertIs(result, version_two)
+            self.assertIs(generator.generated, version_two)
+            self.assertEqual(generator.accepted_augmentation_amount, 1)
+            self.assertEqual(generator.rejected_augmentation_amount, 1)
+            self.assertEqual(generator.rollback_count, 1)
+            output = json.loads((Path(root) / "csa/no-assignment-in-condition/checker_generation_result.json")
+                                .read_text(encoding="utf-8"))
+            self.assertEqual(output["active_version"], 2)
+            self.assertTrue(output["rollback_performed"])
+
+    def test_all_rejected_augmentations_fall_back_to_initial_checker(self):
+        with tempfile.TemporaryDirectory() as root:
+            negative = self.case(root, "n.cpp", "// CHECK-MESSAGES: target\nint n(){return 0;}")
+            positive = self.case(root, "p.cpp", "int p(){return 0;}")
+            generator = CSACheckerGenerator(
+                Rule_CSA(), [negative, positive], rule_result_dir=root,
+                max_augmentation_tries=1, retrieval_mode="lexical")
+            initial = Checker_CSA(checker_code="v1", plugin_path="v1.so", version=1)
+            rejected = Checker_CSA(
+                checker_code="candidate", plugin_path="candidate.so", version=2,
+                generation_kind="augmentation_negative")
+            baseline = [
+                self._case_result(negative, False, "false_negative"),
+                self._case_result(positive, True),
+            ]
+            generator.generated = initial
+            generator.rule.add_checker(initial)
+            with patch.object(generator, "run_all_test_cases", return_value=baseline), \
+                    patch.object(generator, "_augment_candidate", return_value=rejected), \
+                    patch.object(generator, "_run_case",
+                                 return_value=self._case_result(
+                                     negative, False, "false_negative")):
+                result = generator.checker_augmentation(initial)
+            self.assertIs(result, initial)
+            self.assertIs(generator.generated, initial)
+            self.assertEqual(generator.accepted_augmentation_amount, 0)
+            self.assertEqual(generator.rollback_count, 1)
+            output = json.loads((Path(root) / "csa/no-assignment-in-condition/checker_generation_result.json")
+                                .read_text(encoding="utf-8"))
+            self.assertEqual(output["baseline_version"], 1)
+            self.assertEqual(output["active_version"], 1)
+            self.assertEqual(output["best_version"], 1)
+
+    def _case_result(self, case, success, failure_category=None):
+        return {
+            "case_path": str(case.get_case_path()),
+            "case_type": "negative" if case.expected_diagnostics else "positive",
+            "expected_diagnostics": case.expected_diagnostics,
+            "actual_diagnostics": ["target"] if success and case.expected_diagnostics else [],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "",
+            "success": success,
+            "failure_category": failure_category,
+        }
 
     def test_llm_provider_errors_are_retried_and_recorded(self):
         calls = []
@@ -216,6 +368,156 @@ class CSAGeneratorTest(unittest.TestCase):
             "passed cases", "failed case", "returncode: 2; stderr: crash")
         self.assertIn("returncode: 2; stderr: crash", augmentation)
         self.assertIn("expected/actual diagnostics", augmentation)
+
+    def test_logic_payload_survives_a_prose_preamble(self):
+        answer = (
+            "I'm extracting the detection units from the rule text, then I'll "
+            'normalize them into JSON.[{"intent": "flag anonymous records", '
+            '"trigger": "check::ASTDecl<RecordDecl>"}]'
+        )
+        self.assertEqual(
+            parse_json_payload(answer),
+            [{"intent": "flag anonymous records", "trigger": "check::ASTDecl<RecordDecl>"}])
+        self.assertIsNone(parse_json_payload("no payload at all"))
+
+    def test_logic_extraction_failure_is_recorded_without_naming_a_callback(self):
+        with tempfile.TemporaryDirectory() as root:
+            generator = CSACheckerGenerator(
+                Rule_CSA(), [], rule_result_dir=root, retrieval_mode="lexical",
+                llm=lambda _: "sorry, no JSON here")
+            logics = generator.run_logic_for_negative_case("rule", "int f(){}", Path(root))
+            self.assertEqual(len(generator.logic_parse_failures), 1)
+            # A hardcoded check::ASTCodeBody turned every parse failure into a
+            # checker bound to the wrong callback.
+            self.assertNotIn("check::ASTCodeBody", logics[0]["trigger"])
+
+    def test_gate_violations_name_the_clause_that_fired(self):
+        with tempfile.TemporaryDirectory() as root:
+            negative = self.case(root, "n.cpp", "// CHECK-MESSAGES: target\nint n(){return 0;}")
+            positive = self.case(root, "p.cpp", "int p(){return 0;}")
+            generator = CSACheckerGenerator(
+                Rule_CSA(), [negative, positive], rule_result_dir=root, retrieval_mode="lexical")
+            baseline = [
+                self._case_result(negative, False, "false_negative"),
+                self._case_result(positive, True),
+            ]
+            crashed = [
+                self._case_result(negative, True),
+                self._case_result(positive, False, "execution_failure"),
+            ]
+            violations, old_score, new_score = generator._gate_violations(baseline, crashed)
+            self.assertEqual((old_score, new_score), (1, 1))
+            self.assertTrue(any("score did not improve" in item for item in violations))
+            self.assertTrue(any("crash" in item and "p.cpp" in item for item in violations))
+
+    def test_higher_scoring_rejected_candidate_is_retained_and_promoted(self):
+        """A 19/20 with zero regressions must not lose to the 18/20 that passed the gate."""
+        with tempfile.TemporaryDirectory() as root:
+            first = self.case(root, "n1.cpp", "// CHECK-MESSAGES: target\nint n1(){return 0;}")
+            second = self.case(root, "n2.cpp", "// CHECK-MESSAGES: target\nint n2(){return 0;}")
+            positive = self.case(root, "p.cpp", "int p(){return 0;}")
+            generator = CSACheckerGenerator(
+                Rule_CSA(), [first, second, positive], rule_result_dir=root,
+                max_augmentation_tries=1, max_execution_repair_tries=0,
+                retrieval_mode="lexical")
+            initial = Checker_CSA(checker_code="v1", plugin_path="v1.so", version=1)
+            rejected = Checker_CSA(
+                checker_code="v2-better", plugin_path="v2.so", version=2,
+                generation_kind="augmentation_negative")
+            baseline = [
+                self._case_result(first, False, "false_negative"),
+                self._case_result(second, False, "false_negative"),
+                self._case_result(positive, True),
+            ]
+            # Fixes both negatives, regresses nothing, but crashes the analyzer
+            # on a case that used to pass: rejected by the gate, still the best.
+            better = [
+                self._case_result(first, True),
+                self._case_result(second, True),
+                self._case_result(positive, False, "execution_failure"),
+            ]
+            generator.generated = initial
+            generator.rule.add_checker(initial)
+            with patch.object(generator, "run_all_test_cases", side_effect=[baseline, better]), \
+                    patch.object(generator, "_augment_candidate", return_value=rejected), \
+                    patch.object(generator, "_run_case", return_value=self._case_result(first, True)):
+                generator.checker_augmentation(initial)
+            self.assertEqual(generator.rejected_augmentation_amount, 1)
+            self.assertEqual(generator.accepted_augmentation_amount, 0)
+            self.assertIs(generator.best_candidate, rejected)
+            self.assertEqual(generator.best_score, 2)
+            self.assertTrue(generator.promoted_from_best)
+            self.assertIs(generator.generated, rejected)
+            retained = Path(root) / "csa/no-assignment-in-condition/augmentation/best_candidate/checker.cpp"
+            self.assertEqual(retained.read_text(encoding="utf-8"), "v2-better")
+            result = json.loads(
+                (Path(root) / "csa/no-assignment-in-condition/checker_generation_result.json")
+                .read_text(encoding="utf-8"))
+            self.assertEqual(result["best_score"], 2)
+            self.assertEqual(result["final_execution_failure_amount"], 1)
+            self.assertTrue(result["promoted_from_best"])
+
+    def test_promotion_can_be_refused_when_the_best_candidate_crashes(self):
+        with tempfile.TemporaryDirectory() as root:
+            first = self.case(root, "n1.cpp", "// CHECK-MESSAGES: target\nint n1(){return 0;}")
+            second = self.case(root, "n2.cpp", "// CHECK-MESSAGES: target\nint n2(){return 0;}")
+            positive = self.case(root, "p.cpp", "int p(){return 0;}")
+            generator = CSACheckerGenerator(
+                Rule_CSA(), [first, second, positive], rule_result_dir=root,
+                max_augmentation_tries=1, max_execution_repair_tries=0,
+                promote_with_execution_failures=False, retrieval_mode="lexical")
+            initial = Checker_CSA(checker_code="v1", plugin_path="v1.so", version=1)
+            rejected = Checker_CSA(
+                checker_code="v2-better", plugin_path="v2.so", version=2,
+                generation_kind="augmentation_negative")
+            baseline = [
+                self._case_result(first, False, "false_negative"),
+                self._case_result(second, False, "false_negative"),
+                self._case_result(positive, True),
+            ]
+            better = [
+                self._case_result(first, True),
+                self._case_result(second, True),
+                self._case_result(positive, False, "execution_failure"),
+            ]
+            generator.generated = initial
+            generator.rule.add_checker(initial)
+            with patch.object(generator, "run_all_test_cases", side_effect=[baseline, better]), \
+                    patch.object(generator, "_augment_candidate", return_value=rejected), \
+                    patch.object(generator, "_run_case", return_value=self._case_result(first, True)):
+                generator.checker_augmentation(initial)
+            self.assertFalse(generator.promoted_from_best)
+            self.assertIs(generator.generated, initial)
+            self.assertIs(generator.best_candidate, rejected)
+
+    def test_compile_failures_do_not_consume_the_semantic_repair_budget(self):
+        with tempfile.TemporaryDirectory() as root:
+            negative = self.case(root, "n.cpp", "// CHECK-MESSAGES: target\nint n(){return 0;}")
+            positive = self.case(root, "p.cpp", "int p(){return 0;}")
+            generator = CSACheckerGenerator(
+                Rule_CSA(), [negative, positive], rule_result_dir=root,
+                max_augmentation_tries=4, max_semantic_repair_tries=1,
+                max_technical_retries_per_case=2, max_execution_repair_tries=0,
+                retrieval_mode="lexical")
+            initial = Checker_CSA(checker_code="v1", plugin_path="v1.so", version=1)
+            baseline = [
+                self._case_result(negative, False, "false_negative"),
+                self._case_result(positive, True),
+            ]
+            generator.generated = initial
+            generator.rule.add_checker(initial)
+
+            def failed_build(*args, **kwargs):
+                generator._last_augmentation_build = {"reason": "compile_failed", "detail": None}
+                return None
+
+            with patch.object(generator, "run_all_test_cases", return_value=baseline), \
+                    patch.object(generator, "_augment_candidate", side_effect=failed_build):
+                generator.checker_augmentation(initial)
+            # Two technical retries, then the case is out of technical budget -
+            # its single semantic try was never spent on a compiler error.
+            self.assertEqual(generator.augmentation_attempts, 2)
+            self.assertEqual(generator.termination_reason, "semantic_repair_limit_reached")
 
 
 if __name__ == "__main__":

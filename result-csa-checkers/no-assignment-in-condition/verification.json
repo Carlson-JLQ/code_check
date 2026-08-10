@@ -1,0 +1,14 @@
+{
+  "rule": "no-assignment-in-condition",
+  "checker": "GeneratedNoAssignmentInConditionChecker",
+  "frontend": "gjb8114.NoAssignmentInCondition",
+  "rule_id": "gjb8114-r-1-6-3",
+  "diagnostic": "禁止将赋值语句作为逻辑表达式",
+  "passed": 20,
+  "total": 20,
+  "negatives": 10,
+  "positives": 10,
+  "failures": [],
+  "source": "result-exp/03-gpt55/csa/no-assignment-in-condition/first_checker/generated_checker.cpp",
+  "plugin": "result-exp/03-gpt55/csa/no-assignment-in-condition/first_checker/negative_case_1/round_1/workspace/GeneratedNoAssignmentInConditionChecker.so"
+}

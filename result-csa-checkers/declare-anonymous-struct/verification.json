@@ -1,0 +1,14 @@
+{
+  "rule": "declare-anonymous-struct",
+  "checker": "GeneratedDeclareAnonymousStructChecker",
+  "frontend": "gjb8114.DeclareAnonymousStruct",
+  "rule_id": "gjb8114-r-1-1-9",
+  "diagnostic": "禁止结构体定义中含有匿名结构体",
+  "passed": 20,
+  "total": 20,
+  "negatives": 10,
+  "positives": 10,
+  "failures": [],
+  "source": "result-exp/03-gpt55/csa/declare-anonymous-struct/first_checker/generated_checker.cpp",
+  "plugin": "result-exp/03-gpt55/csa/declare-anonymous-struct/first_checker/negative_case_1/round_1/workspace/GeneratedDeclareAnonymousStructChecker.so"
+}

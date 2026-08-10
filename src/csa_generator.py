@@ -2,7 +2,9 @@
 
 import json
 import re
+import shutil
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -42,6 +44,51 @@ def parse_generated_source(answer: str):
     if not cpp and "clang_registerCheckers" in (answer or ""):
         cpp = answer
     return cpp.strip()
+
+
+def parse_json_payload(answer: str, default=None):
+    """Read a JSON value out of an LLM answer that may carry prose or fences.
+
+    Mirrors csa_official_checker_logic_extract/decompose_with_llm.py
+    parse_json_response, kept local so the CSA source tree stays importable
+    without sys.path surgery. Keep the two in sync.
+    """
+    text = re.sub(r"```json|```", "", answer or "", flags=re.I).strip()
+    if not text:
+        return default
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+    # Models routinely prepend a sentence to the payload. Slice from the first
+    # opening bracket to its matching close, ignoring brackets inside strings.
+    for opening, closing in (("[", "]"), ("{", "}")):
+        start = text.find(opening)
+        if start < 0:
+            continue
+        depth, in_string, escaped = 0, False, False
+        for index in range(start, len(text)):
+            char = text[index]
+            if in_string:
+                if escaped:
+                    escaped = False
+                elif char == "\\":
+                    escaped = True
+                elif char == '"':
+                    in_string = False
+                continue
+            if char == '"':
+                in_string = True
+            elif char == opening:
+                depth += 1
+            elif char == closing:
+                depth -= 1
+                if depth == 0:
+                    try:
+                        return json.loads(text[start:index + 1])
+                    except json.JSONDecodeError:
+                        break
+    return default
 
 
 def _no_assignment_source(checker_name, frontend, diagnostic, rule_id):
@@ -153,13 +200,26 @@ class {checker_name} : public Checker<check::ASTCodeBody> {{
     BR.emitReport(std::move(Report));
   }}
 
+  // CompoundStmt::children() yields DeclStmt nodes as well as Expr nodes.
+  // Recursing over every Stmt child is what makes the initializer of
+  // `int r = f() + g();` reachable; a worklist filtered to Expr never sees it.
+  void inspectStmt(const Stmt *S, AnalysisDeclContext *ADC,
+                   BugReporter &BR) const {{
+    if (!S)
+      return;
+    // Replace this with the rule's violation test, then call
+    // emitASTReport(S, ADC, BR) on the most specific violating node.
+    for (const Stmt *Child : S->children())
+      inspectStmt(Child, ADC, BR);
+  }}
+
 public:
   void checkASTCodeBody(const Decl *D, AnalysisManager &AM,
                         BugReporter &BR) const {{
-    (void)D;
-    (void)AM;
-    (void)BR;
-    // Implement the retrieved rule logic here.
+    AnalysisDeclContext *ADC = AM.getAnalysisDeclContext(D);
+    if (!ADC)
+      return;
+    inspectStmt(ADC->getBody(), ADC, BR);
   }}
 }};
 }} // namespace
@@ -208,9 +268,14 @@ class CSACheckerGenerator:
         all_test_cases: Iterable[Case_CSA] = (),
         skipped_test_cases=(),
         rule_result_dir="result-generation",
-        max_compiler_trys=2,
-        max_round=2,
-        max_augmentation_tries=4,
+        max_compiler_trys=4,
+        max_round=3,
+        max_initial_negative_cases=3,
+        max_augmentation_tries=16,
+        max_semantic_repair_tries=3,
+        max_technical_retries_per_case=2,
+        max_execution_repair_tries=2,
+        max_rule_seconds=2400,
         max_llm_tries=3,
         api_json=None,
         metaop_json=None,
@@ -223,6 +288,9 @@ class CSACheckerGenerator:
         embedding_model=DEFAULT_MODEL,
         embedding_cache=None,
         embedding_retriever=None,
+        jobs=1,
+        use_deterministic_fallback=True,
+        promote_with_execution_failures=True,
     ):
         self.rule = self.RULE = rule
         rule_class_name = _pascal_case(rule.get_rule_name())
@@ -237,8 +305,16 @@ class CSACheckerGenerator:
         self.debug_prompt_dir = self.rule_dir / "debug_prompt"
         self.max_compiler_trys = max(0, int(max_compiler_trys))
         self.max_round = max(1, int(max_round))
+        self.max_initial_negative_cases = max(1, int(max_initial_negative_cases))
         self.max_augmentation_tries = max(0, int(max_augmentation_tries))
+        self.max_semantic_repair_tries = max(1, int(max_semantic_repair_tries))
+        self.max_technical_retries_per_case = max(0, int(max_technical_retries_per_case))
+        self.max_execution_repair_tries = max(0, int(max_execution_repair_tries))
+        self.max_rule_seconds = max(0, int(max_rule_seconds or 0))
         self.max_llm_tries = max(1, int(max_llm_tries))
+        self.jobs = max(1, int(jobs))
+        self.use_deterministic_fallback = bool(use_deterministic_fallback)
+        self.promote_with_execution_failures = bool(promote_with_execution_failures)
         self.llvm_root, self.llvm_build = Path(llvm_root), Path(llvm_build)
         self.compiler = compiler or str(self.llvm_build / "bin/clang++")
         self.analyzer = analyzer or str(self.llvm_build / "bin/clang")
@@ -270,6 +346,28 @@ class CSACheckerGenerator:
         self.llm_failures = []
         self.last_results = []
         self.termination_reason = "not_started"
+        self.baseline_checker: Optional[Checker_CSA] = None
+        self.baseline_results = []
+        self.augmentation_history = []
+        self.rollback_count = 0
+        self.accepted_augmentation_amount = 0
+        self.rejected_augmentation_amount = 0
+        self.final_checker_source = None
+        self.initial_candidate_results = []
+        self.initial_attempted_case = None
+        self.initial_compile_success = False
+        self.logic_parse_failures = []
+        # Highest-scoring candidate ever produced, retained even when the
+        # acceptance gate rejects it. A 19/20 candidate was previously deleted
+        # in favour of the 18/20 that happened to pass the gate.
+        self.best_candidate: Optional[Checker_CSA] = None
+        self.best_results = []
+        self.best_score = None
+        self.best_rank = None
+        self.best_source_path = None
+        self.best_plugin_path = None
+        self.promoted_from_best = False
+        self.started_at = None
 
     def get_total_cost(self):
         return self.total_cost
@@ -280,8 +378,9 @@ class CSACheckerGenerator:
                      and is_negative(case)), None)
 
     def _candidate_negatives(self):
-        return [case for case in self.cases if is_negative(case) and not case.skipped
-                and str(case.get_case_path()) not in self.skipped]
+        candidates = [case for case in self.cases if is_negative(case) and not case.skipped
+                      and str(case.get_case_path()) not in self.skipped]
+        return candidates[:self.max_initial_negative_cases]
 
     def _write_text(self, path, value):
         path = Path(path)
@@ -333,18 +432,18 @@ class CSACheckerGenerator:
     def run_logic_for_negative_case(self, rule_description, case_code, artifact_dir=None):
         prompt = build_logic_prompt(rule_description, case_code)
         answer = self._invoke(prompt, Path(artifact_dir) / "logic_prompt.md" if artifact_dir else None)
-        if answer:
-            cleaned = re.sub(r"```json|```", "", answer, flags=re.I).strip()
-            try:
-                value = json.loads(cleaned)
-                return value if isinstance(value, list) else [value]
-            except json.JSONDecodeError:
-                pass
+        value = parse_json_payload(answer)
+        if value is not None:
+            return value if isinstance(value, list) else [value]
+        self.logic_parse_failures.append(str(artifact_dir) if artifact_dir else "<unknown>")
+        # Never name a concrete callback here. A hardcoded check::ASTCodeBody
+        # turned every logic-extraction failure into a wrong-callback checker.
         return [{
             "intent": f"implement the rule: {rule_description}",
-            "trigger": "check::ASTCodeBody",
+            "trigger": "unknown - choose the callback from the rule shape",
+            "traversal": "unknown - derive it from the negative test",
             "constraints": ["inspect the complete AST", "emit the configured diagnostic"],
-            "api_search_terms": ["ASTCodeBody", "Stmt", "BugType", "CheckerRegistry"],
+            "api_search_terms": ["ASTCodeBody", "ASTDecl", "Stmt", "Decl", "BugType", "CheckerRegistry"],
         }]
 
     def _lexical_context(self, logics=None, limit=8):
@@ -435,6 +534,8 @@ class CSACheckerGenerator:
         return [_compact_record(item) for item in metaops], [_compact_record(item) for item in api_refs]
 
     def _fallback_source(self):
+        if not self.use_deterministic_fallback:
+            return ""
         if self.rule.get_rule_name() != "no-assignment-in-condition":
             return ""
         return _no_assignment_source(
@@ -528,6 +629,8 @@ class CSACheckerGenerator:
         self.first_dir.mkdir(parents=True, exist_ok=True)
         self.debug_prompt_dir.mkdir(parents=True, exist_ok=True)
         for case_number, case in enumerate(self._candidate_negatives(), 1):
+            if self.initial_attempted_case is None:
+                self.initial_attempted_case = case
             case_dir = self.first_dir / f"negative_case_{case_number}"
             self._write_text(case_dir / "selected_case.cpp", case.get_case_code())
             for round_number in range(1, self.max_round + 1):
@@ -541,6 +644,7 @@ class CSACheckerGenerator:
                 self._write_json(round_dir / "retrieved_api_refs.json", api_refs)
                 prompt = build_first_checker_prompt(
                     self.rule.get_rule_description(), case.get_case_code(),
+                    json.dumps(logics, ensure_ascii=False),
                     json.dumps(metaops, ensure_ascii=False),
                     json.dumps(api_refs, ensure_ascii=False), self.checker_name, self.frontend,
                     self.rule.get_diagnostic(), self.rule.get_rule_id(), self._template_source())
@@ -551,6 +655,14 @@ class CSACheckerGenerator:
                     cpp = self._fallback_source()
                     generation_source = "deterministic_fallback"
                 if not cpp:
+                    self.initial_candidate_results.append({
+                        "case_path": str(case.get_case_path()),
+                        "case_type": "negative",
+                        "expected_diagnostics": expected_diagnostics(case.get_case_code()),
+                        "actual_diagnostics": [], "returncode": None, "stdout": "", "stderr": "",
+                        "success": False, "failure_category": "generation_failure",
+                        "candidate_number": case_number, "round": round_number,
+                    })
                     continue
                 workspace = round_dir / "workspace"
                 generation_context = json.dumps({
@@ -563,9 +675,19 @@ class CSACheckerGenerator:
                     "retrieved_metaops": metaops,
                     "retrieved_api_refs": api_refs,
                 }, ensure_ascii=False)
-                compiled, cpp, plugin, _, _, _ = self._compile_with_repairs(
+                compiled, cpp, plugin, compile_rc, compile_stdout, compile_stderr = self._compile_with_repairs(
                     cpp, workspace, (metaops, api_refs), round_dir, generation_context)
+                self.initial_compile_success |= compiled
                 if not compiled:
+                    self.initial_candidate_results.append({
+                        "case_path": str(case.get_case_path()),
+                        "case_type": "negative",
+                        "expected_diagnostics": expected_diagnostics(case.get_case_code()),
+                        "actual_diagnostics": [], "returncode": compile_rc,
+                        "stdout": compile_stdout, "stderr": compile_stderr,
+                        "success": False, "failure_category": "compile_failure",
+                        "candidate_number": case_number, "round": round_number,
+                    })
                     continue
                 candidate = Checker_CSA(
                     checker_code=cpp, name=self.checker_name, frontend=self.frontend,
@@ -576,6 +698,8 @@ class CSACheckerGenerator:
                         "generation_source": generation_source,
                     })
                 verification = self._run_case(case, candidate)
+                verification.update({"candidate_number": case_number, "round": round_number})
+                self.initial_candidate_results.append(verification)
                 self._write_json(round_dir / "verify.output.json", verification)
                 if not verification["success"]:
                     continue
@@ -590,7 +714,8 @@ class CSACheckerGenerator:
             self.skipped.add(str(case.get_case_path()))
             self.skipped_Test_Cases.append(case)
         self.termination_reason = "initial_generation_failed"
-        self._write_result([], initial_success=False, augmentation_started=False)
+        self._write_result(self.initial_candidate_results, initial_success=False,
+                           augmentation_started=False)
         return False, None
 
     def run_all_test_cases(self, checker=None, write_result=True, augmentation_started=False):
@@ -598,8 +723,15 @@ class CSACheckerGenerator:
         if checker is None:
             return self._write_result([], initial_success=False,
                                       augmentation_started=augmentation_started)
-        results = [self._run_case(case, checker) for case in self.cases
-                   if str(case.get_case_path()) not in self.skipped or case is self.initial_case]
+        selected = [case for case in self.cases
+                    if str(case.get_case_path()) not in self.skipped or case is self.initial_case]
+        if self.jobs > 1 and len(selected) > 1:
+            # Each _run_case is an isolated clang subprocess. Reassemble in the
+            # original case order so results stay deterministic.
+            with ThreadPoolExecutor(max_workers=self.jobs) as pool:
+                results = list(pool.map(lambda case: self._run_case(case, checker), selected))
+        else:
+            results = [self._run_case(case, checker) for case in selected]
         checker.set_passed_cases([
             case for case in self.cases
             if case.last_result and case.last_result["success"]
@@ -613,31 +745,94 @@ class CSACheckerGenerator:
         result = self.run_all_test_cases(init_checker)
         return result["all_cases_success"], result["failed_case_list"], result["success_case_list"]
 
-    def _augment_candidate(self, failed_result, current, attempt_dir):
+    def _identity_gaps(self, cpp):
+        required = [
+            self.checker_name,
+            f'"{self.frontend}"',
+            "clang_registerCheckers",
+            "clang_analyzerAPIVersionString",
+        ]
+        return [item for item in required if item not in cpp]
+
+    def _checker_identity_valid(self, cpp):
+        return not self._identity_gaps(cpp)
+
+    @staticmethod
+    def _failure_kind(failure_category):
+        return {
+            "false_negative": "negative",
+            "false_positive": "positive",
+        }.get(failure_category, "execution")
+
+    def _sibling_failure_digest(self, failed_result, all_failures, limit=6):
+        """Other failures of the same category, so a fix cannot special-case one.
+
+        Two augmentation attempts previously "fixed" all ten false positives by
+        disabling the report path, flipping ten negatives to false negatives,
+        because the prompt only ever showed one case.
+        """
+        siblings = [item for item in (all_failures or [])
+                    if item.get("failure_category") == failed_result.get("failure_category")
+                    and item.get("case_path") != failed_result.get("case_path")]
+        if not siblings:
+            return "(none)"
+        digest = []
+        for item in siblings[:limit]:
+            case = next((case for case in self.cases
+                         if str(case.get_case_path()) == item["case_path"]), None)
+            digest.append({
+                "case_path": item["case_path"],
+                "case_type": item.get("case_type"),
+                "expected_diagnostics": item.get("expected_diagnostics"),
+                "actual_diagnostics": item.get("actual_diagnostics"),
+                "case_code": case.get_case_code() if case else "",
+            })
+        text = json.dumps(digest, ensure_ascii=False, indent=2)
+        if len(siblings) > limit:
+            text += f"\n\n({len(siblings) - limit} further cases fail the same way.)"
+        return text
+
+    def _augment_candidate(self, failed_result, current, attempt_dir,
+                           failure_history=None, semantic_attempt=1,
+                           all_failures=None, all_attempts=None):
+        self._last_augmentation_build = {"reason": None, "detail": None}
         if not self.llm:
+            self._last_augmentation_build["reason"] = "llm_unavailable"
             return None
         case = next(case for case in self.cases
                     if str(case.get_case_path()) == failed_result["case_path"])
-        kind = "negative" if failed_result["failure_category"] == "false_negative" else "positive"
+        kind = self._failure_kind(failed_result["failure_category"])
         passed_code = "\n\n".join(item.get_case_code() for item in current.get_passed_cases())
+        history_json = json.dumps(failure_history or [], ensure_ascii=False)
+        attempts_json = json.dumps(all_attempts or [], ensure_ascii=False)
+        siblings = self._sibling_failure_digest(failed_result, all_failures)
         logic_prompt = build_augmentation_logic_prompt(
             kind, current.checker_code, passed_code, case.get_case_code(),
-            json.dumps(failed_result, ensure_ascii=False))
-        logic_answer = self._invoke(logic_prompt, attempt_dir / f"augmentation_logic_{kind}.md")
-        try:
-            logic = json.loads(re.sub(r"```json|```", "", logic_answer, flags=re.I).strip())
-        except (json.JSONDecodeError, TypeError):
-            logic = [{"intent": f"repair false {kind}", "case": str(case.get_case_path())}]
+            json.dumps(failed_result, ensure_ascii=False), history_json,
+            siblings, attempts_json)
+        logic_answer = self._invoke(logic_prompt, attempt_dir / "semantic_analysis_prompt.md")
+        logic = parse_json_payload(logic_answer)
+        if not isinstance(logic, dict):
+            logic = {
+                "root_cause": f"unparsed false {kind} analysis",
+                "semantic_change": "repair the target without changing passed behavior",
+                "api_search_terms": [],
+            }
         context = self.retrieve_context(logic)
         prompt = build_augmentation_prompt(
             kind, self.rule.get_rule_description(), current.checker_code,
             json.dumps(logic, ensure_ascii=False),
             json.dumps({"metaops": context[0], "apis": context[1]}, ensure_ascii=False),
-            passed_code, case.get_case_code(), json.dumps(failed_result, ensure_ascii=False))
-        answer = self._invoke(prompt, attempt_dir / f"augmentation_check_{kind}.md")
+            passed_code, case.get_case_code(), json.dumps(failed_result, ensure_ascii=False),
+            history_json, self.checker_name, self.frontend,
+            self.rule.get_rule_id(), self.rule.get_diagnostic(),
+            siblings, attempts_json)
+        answer = self._invoke(prompt, attempt_dir / "augmentation_prompt.md")
         cpp = parse_generated_source(answer)
         if not cpp:
+            self._last_augmentation_build["reason"] = "invalid_llm_output"
             return None
+        self._write_text(attempt_dir / "generated_checker.cpp", cpp)
         workspace = attempt_dir / "workspace"
         generation_context = json.dumps({
             "rule_name": self.rule.get_rule_name(),
@@ -649,56 +844,283 @@ class CSACheckerGenerator:
             "augmentation_logic": logic,
             "retrieved_metaops": context[0],
             "retrieved_api_refs": context[1],
+            "previous_rejected_attempts": failure_history or [],
+            "semantic_attempt": semantic_attempt,
         }, ensure_ascii=False)
         compiled, cpp, plugin, _, _, _ = self._compile_with_repairs(
             cpp, workspace, context, attempt_dir, generation_context)
         if not compiled:
+            self._last_augmentation_build["reason"] = "compile_failed"
+            return None
+        self._write_text(attempt_dir / "generated_checker.cpp", cpp)
+        gaps = self._identity_gaps(cpp)
+        if gaps:
+            self._last_augmentation_build["reason"] = "checker_identity_changed"
+            self._last_augmentation_build["detail"] = {"missing_tokens": gaps}
+            if plugin.exists():
+                plugin.unlink()
             return None
         return Checker_CSA(
             checker_code=cpp, name=self.checker_name, frontend=self.frontend,
             plugin_path=str(plugin), version=current.version + 1,
             generation_kind=f"augmentation_{kind}",
-            metadata={"target_case": str(case.get_case_path())})
+            metadata={
+                "target_case": str(case.get_case_path()),
+                "semantic_attempt": semantic_attempt,
+            })
+
+    def _record_rejected_candidate(self, attempt_dir, manifest, reason,
+                                   target_result=None, regression=None, candidate=None,
+                                   gate_violations=None, detail=None):
+        manifest.update({
+            "status": "rejected",
+            "rejection_reason": reason,
+            "gate_violations": gate_violations or [],
+            "rejection_detail": detail,
+            "target_success": bool(target_result and target_result.get("success")),
+        })
+        if regression is not None:
+            manifest["new_score"] = sum(item.get("success", False) for item in regression)
+        self.rejected_augmentation_amount += 1
+        self.rollback_count += 1
+        self.augmentation_history.append(dict(manifest))
+        self._write_json(attempt_dir / "candidate_manifest.json", manifest)
+        self._write_json(attempt_dir / "rejection_reason.json", {
+            "reason": reason,
+            "gate_violations": gate_violations or [],
+            "rejection_detail": detail,
+            "base_version_retained": manifest["base_version"],
+        })
+        if candidate:
+            # Never delete the retained best candidate's artifact.
+            if candidate is self.best_candidate:
+                return
+            plugin = Path(candidate.plugin_path)
+            try:
+                plugin.resolve().relative_to(Path(attempt_dir).resolve())
+                is_attempt_artifact = True
+            except ValueError:
+                is_attempt_artifact = False
+            if is_attempt_artifact and plugin.exists():
+                plugin.unlink()
+
+    def _persist_candidate(self, candidate, results, version_dir):
+        version_dir = Path(version_dir)
+        source_path = version_dir / "checker.cpp"
+        self._write_text(source_path, candidate.checker_code)
+        self._write_json(version_dir / "regression_result.json", results)
+        plugin = Path(candidate.plugin_path)
+        stored_plugin = candidate.plugin_path
+        if plugin.exists():
+            copied = version_dir / "plugin.so"
+            copied.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(plugin, copied)
+            stored_plugin = str(copied)
+        return str(source_path), stored_plugin
+
+    @staticmethod
+    def _candidate_rank(results):
+        """Order candidates by score, breaking ties on fewer analyzer crashes."""
+        score = sum(bool(item.get("success")) for item in results)
+        crashes = sum(1 for item in results
+                      if item.get("failure_category") == "execution_failure")
+        return (score, -crashes)
+
+    def _record_best_candidate(self, candidate, results):
+        """Retain the highest-ranked candidate regardless of the accept gate.
+
+        The gate is a monotonicity contract for what becomes the next baseline,
+        not a reason to destroy a better checker. A 19/20 candidate with no
+        regressions was previously deleted in favour of an 18/20.
+        """
+        rank = self._candidate_rank(results)
+        if self.best_rank is not None and rank <= self.best_rank:
+            return False
+        self.best_rank = rank
+        self.best_score = rank[0]
+        self.best_candidate = candidate
+        self.best_results = list(results)
+        self.best_source_path, self.best_plugin_path = self._persist_candidate(
+            candidate, results, self.rule_dir / "augmentation" / "best_candidate")
+        return True
+
+    def _rule_time_exhausted(self):
+        if not self.max_rule_seconds or self.started_at is None:
+            return False
+        return (time.monotonic() - self.started_at) >= self.max_rule_seconds
+
+    def _save_accepted_candidate(self, candidate, results, attempt_dir, manifest):
+        version_dir = self.rule_dir / "augmentation" / "accepted_versions" / f"version_{candidate.version}"
+        source_path, accepted_plugin = self._persist_candidate(candidate, results, version_dir)
+        candidate.plugin_path = accepted_plugin
+        manifest.update({
+            "status": "accepted",
+            "rejection_reason": None,
+            "gate_violations": [],
+            "target_success": True,
+            "new_score": sum(item.get("success", False) for item in results),
+            "accepted_source": source_path,
+            "accepted_plugin": candidate.plugin_path,
+        })
+        self.accepted_augmentation_amount += 1
+        self.augmentation_history.append(dict(manifest))
+        self._write_json(attempt_dir / "candidate_manifest.json", manifest)
+        self.final_checker_source = source_path
+
+    @staticmethod
+    def _gate_violations(baseline, candidate_results):
+        """Name the clause that fired, not just that something did.
+
+        The model was previously told only "full_regression_failed" alongside
+        numbers that read as a pass, and responded by weakening the checker.
+        """
+        def paths(results, category=None):
+            if category is None:
+                return {item["case_path"] for item in results if item["success"]}
+            return {item["case_path"] for item in results
+                    if item["failure_category"] == category}
+
+        old_score = sum(item["success"] for item in baseline)
+        new_score = sum(item["success"] for item in candidate_results)
+        violations = []
+        if new_score <= old_score:
+            violations.append(
+                f"score did not improve: {new_score} passing vs {old_score} before")
+        regressed = sorted(paths(baseline) - paths(candidate_results))
+        if regressed:
+            violations.append(
+                "regressed previously passing cases: " + ", ".join(regressed))
+        for category, label in (
+            ("execution_failure", "made the analyzer crash or exit non-zero on"),
+            ("false_positive", "introduced new false positives on"),
+            ("false_negative", "introduced new false negatives on"),
+        ):
+            introduced = sorted(paths(candidate_results, category) - paths(baseline, category))
+            if introduced:
+                violations.append(f"{label}: " + ", ".join(introduced))
+        return violations, old_score, new_score
 
     def checker_augmentation(self, init_checker=None):
         current = init_checker or self.generated
         if current is None:
             return None
+        if self.started_at is None:
+            self.started_at = time.monotonic()
+        self.baseline_checker = current
         baseline = self.run_all_test_cases(current, write_result=False, augmentation_started=True)
+        self.baseline_results = list(baseline)
+        baseline_dir = self.rule_dir / "augmentation" / "baseline"
+        self._write_text(baseline_dir / "checker.cpp", current.checker_code)
+        self._write_json(baseline_dir / "regression_result.json", baseline)
+        self.final_checker_source = str(self.first_dir / "generated_checker.cpp")
+        self._record_best_candidate(current, baseline)
         failed = [item for item in baseline if not item["success"]]
         if not failed:
             self.generated = current
+            self.last_results = baseline
             self.termination_reason = "all_cases_passed"
             self._write_result(baseline, augmentation_started=True)
             return current
-        seen_failures = set()
-        for attempt in range(1, self.max_augmentation_tries + 1):
-            semantic_failures = [item for item in failed
-                                 if item["failure_category"] in {"false_negative", "false_positive"}
-                                 and item["case_path"] not in seen_failures]
-            if not semantic_failures:
-                self.termination_reason = "no_progress_or_execution_failures"
+        # Semantic and technical budgets are separate. A candidate that failed
+        # to compile says nothing about whether the case is repairable, and
+        # charging it against the semantic budget stranded unused attempts.
+        target_attempts = {}
+        technical_attempts = {}
+        failure_history = {}
+        all_attempts = []
+        priority = {"false_negative": 0, "false_positive": 1, "execution_failure": 2}
+        attempt = 0
+        self.termination_reason = "max_augmentation_tries_reached"
+        while attempt < self.max_augmentation_tries:
+            if self._rule_time_exhausted():
+                self.termination_reason = "rule_time_budget_reached"
                 break
-            target = semantic_failures[0]
-            seen_failures.add(target["case_path"])
+            repairable = sorted(
+                (item for item in failed
+                 if item["failure_category"] in priority
+                 and target_attempts.get(item["case_path"], 0) < self.max_semantic_repair_tries
+                 and technical_attempts.get(item["case_path"], 0) < self.max_technical_retries_per_case),
+                key=lambda item: (priority[item["failure_category"]], item["case_path"]),
+            )
+            if not repairable:
+                self.termination_reason = "semantic_repair_limit_reached"
+                break
+            attempt += 1
+            target = repairable[0]
+            target_path = target["case_path"]
+            semantic_attempt = target_attempts.get(target_path, 0) + 1
             self.augmentation_attempts += 1
             attempt_dir = self.rule_dir / "augmentation" / f"attempt_{attempt}"
-            candidate = self._augment_candidate(target, current, attempt_dir)
+            manifest = {
+                "base_version": current.version,
+                "candidate_version": current.version + 1,
+                "target_case": target_path,
+                "failure_category": target["failure_category"],
+                "status": "pending",
+                "rejection_reason": None,
+                "compile_attempts_before": self.compile_attempts,
+                "semantic_attempt": semantic_attempt,
+                "old_score": sum(item["success"] for item in baseline),
+            }
+            self._write_json(attempt_dir / "candidate_manifest.json", manifest)
+            candidate = self._augment_candidate(
+                target, current, attempt_dir,
+                failure_history.get(target_path, []), semantic_attempt,
+                all_failures=failed, all_attempts=all_attempts)
+            manifest["compile_attempts"] = self.compile_attempts - manifest.pop("compile_attempts_before")
+            build = getattr(self, "_last_augmentation_build", {}) or {}
             if candidate is None:
+                reason = build.get("reason") or "candidate_generation_failed"
+                detail = build.get("detail")
+                technical_attempts[target_path] = technical_attempts.get(target_path, 0) + 1
+                self._record_rejected_candidate(attempt_dir, manifest, reason, detail=detail)
+                entry = {
+                    "target_case": target_path,
+                    "semantic_attempt": semantic_attempt,
+                    "reason": reason,
+                    "detail": detail,
+                }
+                failure_history.setdefault(target_path, []).append(entry)
+                all_attempts.append(entry)
                 continue
+            # A candidate that built is a semantic outcome from here on.
+            target_attempts[target_path] = target_attempts.get(target_path, 0) + 1
             targeted = self._run_case(
-                next(case for case in self.cases if str(case.get_case_path()) == target["case_path"]),
+                next(case for case in self.cases if str(case.get_case_path()) == target_path),
                 candidate)
             self._write_json(attempt_dir / "target_verify.json", targeted)
             if not targeted["success"]:
+                self._record_rejected_candidate(
+                    attempt_dir, manifest, "target_verification_failed", targeted, candidate=candidate)
+                entry = {
+                    "target_case": target_path,
+                    "semantic_attempt": semantic_attempt,
+                    "reason": "target_verification_failed",
+                    "detail": "the candidate still does not resolve the target case",
+                    "result": targeted,
+                }
+                failure_history.setdefault(target_path, []).append(entry)
+                all_attempts.append(entry)
                 continue
             candidate_results = self.run_all_test_cases(candidate, write_result=False, augmentation_started=True)
-            old_score = sum(item["success"] for item in baseline)
-            new_score = sum(item["success"] for item in candidate_results)
             self._write_json(attempt_dir / "regression_result.json", candidate_results)
-            old_passed = {item["case_path"] for item in baseline if item["success"]}
-            new_passed = {item["case_path"] for item in candidate_results if item["success"]}
-            if new_score < old_score or not old_passed.issubset(new_passed):
+            # Retain before any rejection path can delete the artifact.
+            self._record_best_candidate(candidate, candidate_results)
+            gate_violations, old_score, new_score = self._gate_violations(baseline, candidate_results)
+            if gate_violations:
+                self._record_rejected_candidate(
+                    attempt_dir, manifest, "full_regression_failed", targeted,
+                    candidate_results, candidate, gate_violations=gate_violations)
+                entry = {
+                    "target_case": target_path,
+                    "semantic_attempt": semantic_attempt,
+                    "reason": "full_regression_failed",
+                    "gate_violations": gate_violations,
+                    "old_score": old_score,
+                    "new_score": new_score,
+                }
+                failure_history.setdefault(target_path, []).append(entry)
+                all_attempts.append(entry)
                 continue
             current, baseline = candidate, candidate_results
             failed = [item for item in baseline if not item["success"]]
@@ -709,18 +1131,96 @@ class CSACheckerGenerator:
             ])
             self.generated = current
             self.rule.add_checker(current)
+            self._save_accepted_candidate(current, baseline, attempt_dir, manifest)
+            all_attempts.append({
+                "target_case": target_path,
+                "semantic_attempt": semantic_attempt,
+                "reason": "accepted",
+                "old_score": old_score,
+                "new_score": new_score,
+            })
             snapshot_dir = self.rule_dir / "checker_versions" / f"version_{current.version}"
             self._write_text(snapshot_dir / f"{self.checker_name}.cpp", current.checker_code)
-            seen_failures.clear()
             if not failed:
                 self.termination_reason = "all_cases_passed"
                 break
-        else:
-            self.termination_reason = "max_augmentation_tries_reached"
         self.generated = current
         self.last_results = baseline
-        self._write_result(baseline, augmentation_started=True)
-        return current
+        self._repair_best_candidate_crashes()
+        final_results = self._promote_best_candidate(baseline)
+        self._write_result(final_results, augmentation_started=True)
+        return self.generated
+
+    def _repair_best_candidate_crashes(self):
+        """Spend a dedicated budget turning the best candidate's crashes into passes.
+
+        An analyzer assertion is a defect in the generated checker, not a
+        property of the test case, and it is what kept the highest-scoring
+        candidate out of the accepted lineage.
+        """
+        if not self.max_execution_repair_tries or self.best_candidate is None or not self.llm:
+            return
+        for index in range(1, self.max_execution_repair_tries + 1):
+            crashes = [item for item in self.best_results
+                       if item.get("failure_category") == "execution_failure"]
+            if not crashes or self._rule_time_exhausted():
+                return
+            attempt_dir = self.rule_dir / "augmentation" / f"execution_repair_{index}"
+            base = self.best_candidate
+            self.augmentation_attempts += 1
+            candidate = self._augment_candidate(
+                crashes[0], base, attempt_dir, failure_history=[], semantic_attempt=index,
+                all_failures=[item for item in self.best_results if not item["success"]],
+                all_attempts=self.augmentation_history)
+            build = getattr(self, "_last_augmentation_build", {}) or {}
+            if candidate is None:
+                self._write_json(attempt_dir / "rejection_reason.json", {
+                    "phase": "execution_repair",
+                    "reason": build.get("reason") or "candidate_generation_failed",
+                    "rejection_detail": build.get("detail"),
+                })
+                continue
+            results = self.run_all_test_cases(candidate, write_result=False, augmentation_started=True)
+            self._write_json(attempt_dir / "regression_result.json", results)
+            promoted = self._record_best_candidate(candidate, results)
+            remaining = sum(1 for item in results
+                            if item.get("failure_category") == "execution_failure")
+            self._write_json(attempt_dir / "candidate_manifest.json", {
+                "phase": "execution_repair",
+                "attempt": index,
+                "base_version": base.version,
+                "target_case": crashes[0]["case_path"],
+                "new_score": sum(bool(item.get("success")) for item in results),
+                "execution_failures": remaining,
+                "promoted_to_best": promoted,
+            })
+            if promoted and not remaining:
+                return
+
+    def _promote_best_candidate(self, final_results):
+        """Ship the best checker produced, not merely the last one accepted."""
+        if self.best_candidate is None or self.best_candidate is self.generated:
+            return final_results
+        if self._candidate_rank(self.best_results) <= self._candidate_rank(final_results):
+            return final_results
+        crashes = sum(1 for item in self.best_results
+                      if item.get("failure_category") == "execution_failure")
+        if crashes and not self.promote_with_execution_failures:
+            return final_results
+        checker = self.best_candidate
+        if self.best_plugin_path:
+            checker.plugin_path = self.best_plugin_path
+        checker.set_passed_cases([
+            case for case in self.cases
+            if any(item["case_path"] == str(case.get_case_path()) and item["success"]
+                   for item in self.best_results)
+        ])
+        self.generated = checker
+        self.rule.add_checker(checker)
+        self.final_checker_source = self.best_source_path
+        self.promoted_from_best = True
+        self.last_results = list(self.best_results)
+        return list(self.best_results)
 
     def _write_result(self, results, initial_success=None, augmentation_started=False):
         successes = [item for item in results if item.get("success")]
@@ -735,20 +1235,57 @@ class CSACheckerGenerator:
             "checker": self.checker_name,
             "frontend": self.frontend,
             "initial_case": str(self.initial_case.get_case_path()) if self.initial_case else None,
+            "initial_attempted_case": (
+                str(self.initial_attempted_case.get_case_path())
+                if self.initial_attempted_case else None
+            ),
+            "initial_candidate_amount": len(self.initial_candidate_results),
+            "initial_candidate_result_list": self.initial_candidate_results,
             "negative_case_amount": len(negatives),
             "positive_case_amount": len(positives),
             "success_case_list": successes,
             "failed_case_list": failures,
             "performance": f"{len(successes)}/{len(results)}",
             "compile_success": bool(self.generated),
+            "initial_compile_success": self.initial_compile_success,
             "initial_case_success": initial_success,
             "all_cases_success": bool(results) and not failures,
             "augmentation_started": augmentation_started,
             "generation_attempts": self.generation_attempts,
             "compile_attempts": self.compile_attempts,
             "augmentation_attempts": self.augmentation_attempts,
+            "baseline_version": self.baseline_checker.version if self.baseline_checker else None,
+            "active_version": self.generated.version if self.generated else None,
+            "best_version": self.best_candidate.version if self.best_candidate else (
+                self.generated.version if self.generated else None),
+            "best_score": self.best_score,
+            "best_checker_source": self.best_source_path,
+            "best_plugin_path": self.best_plugin_path,
+            "promoted_from_best": self.promoted_from_best,
+            "final_execution_failure_amount": sum(
+                1 for item in failures
+                if item.get("failure_category") == "execution_failure"
+            ),
+            "logic_parse_failure_amount": len(self.logic_parse_failures),
+            "logic_parse_failures": self.logic_parse_failures,
+            "rollback_performed": self.rollback_count > 0,
+            "rollback_count": self.rollback_count,
+            "accepted_augmentation_amount": self.accepted_augmentation_amount,
+            "rejected_augmentation_amount": self.rejected_augmentation_amount,
+            "augmentation_history": self.augmentation_history,
+            "remaining_semantic_failures": [
+                item for item in failures
+                if item.get("failure_category") in {"false_negative", "false_positive"}
+            ],
+            "final_checker_source": self.final_checker_source,
+            "final_plugin_path": self.generated.plugin_path if self.generated else None,
             "skipped_cases": sorted(self.skipped),
             "termination_reason": self.termination_reason,
+            "run_status": (
+                "success" if results and not failures else
+                "partial" if results else "failed"
+            ),
+            "failure_reason": self.termination_reason if failures or not results else None,
             "checker_versions": [checker.snapshot() for checker in self.rule.get_checkers()],
             "total_cost": self.total_cost,
             "cost_note": "not calculated: model pricing is not configured",
@@ -767,6 +1304,8 @@ class CSACheckerGenerator:
         return result
 
     def generate_checker(self):
+        if self.started_at is None:
+            self.started_at = time.monotonic()
         success, checker = self.first_checker_generation()
         if not success:
             return None

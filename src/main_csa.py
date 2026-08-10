@@ -66,9 +66,20 @@ def build_parser():
     parser.add_argument("--result-dir", type=Path, default=REPO_ROOT / "result-generation")
     parser.add_argument("--llvm-root", type=Path, default=Path("/home/llvm/llvm-project"))
     parser.add_argument("--llvm-build", type=Path, default=Path("/home/checker/llvm-build"))
-    parser.add_argument("--max-round", type=int, default=2)
-    parser.add_argument("--max-compiler-trys", type=int, default=2)
-    parser.add_argument("--max-augmentation-tries", type=int, default=4)
+    parser.add_argument("--max-round", type=int, default=3)
+    parser.add_argument("--max-initial-negative-cases", type=int, default=3)
+    parser.add_argument("--max-compiler-trys", type=int, default=4)
+    parser.add_argument("--max-augmentation-tries", type=int, default=16)
+    parser.add_argument("--max-semantic-repair-tries", type=int, default=3)
+    parser.add_argument("--max-technical-retries-per-case", type=int, default=2)
+    parser.add_argument("--max-execution-repair-tries", type=int, default=2)
+    parser.add_argument("--max-rule-seconds", type=int, default=2400)
+    parser.add_argument("--jobs", type=int, default=6,
+                        help="Parallel clang --analyze invocations per regression run")
+    parser.add_argument("--no-deterministic-fallback", action="store_true",
+                        help="Disable the hardcoded offline checker for no-assignment-in-condition")
+    parser.add_argument("--no-promote-with-execution-failures", action="store_true",
+                        help="Never ship a higher-scoring checker that crashes the analyzer")
     parser.add_argument("--first-checker-only", action="store_true")
     parser.add_argument("--check-environment", action="store_true")
     parser.add_argument("--use-llm", action="store_true",
@@ -109,8 +120,16 @@ def main(argv=None):
         cases,
         rule_result_dir=args.result_dir,
         max_compiler_trys=args.max_compiler_trys,
+        max_initial_negative_cases=args.max_initial_negative_cases,
         max_round=args.max_round,
         max_augmentation_tries=args.max_augmentation_tries,
+        max_semantic_repair_tries=args.max_semantic_repair_tries,
+        max_technical_retries_per_case=args.max_technical_retries_per_case,
+        max_execution_repair_tries=args.max_execution_repair_tries,
+        max_rule_seconds=args.max_rule_seconds,
+        jobs=args.jobs,
+        use_deterministic_fallback=not args.no_deterministic_fallback,
+        promote_with_execution_failures=not args.no_promote_with_execution_failures,
         llvm_root=args.llvm_root,
         llvm_build=args.llvm_build,
         llm=llm,

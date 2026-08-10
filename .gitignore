@@ -19,6 +19,14 @@ commit_to_test_cases/kparser/tree-sitter-cpp
 
 result-generation/
 experiment/
+
+# CSA 实验中间产物：逐轮批次、冻结基线、单条重跑等过程数据一律不入库。
+# 只保留 result-csa-checkers/ 下的最终交付（checker 源码 + 逐用例复核记录）。
+result-exp/
+result-baseline-*/
+result-generation-*/
+!result-csa-checkers/
+
 ## build目录
 llvm-project/build/
 src/retriever/embedding_model/

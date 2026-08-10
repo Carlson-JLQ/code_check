@@ -1,0 +1,14 @@
+{
+  "rule": "dependent-call-in-expr",
+  "checker": "GeneratedDependentCallInExprChecker",
+  "frontend": "gjb8114.DependentCallInExpr",
+  "rule_id": "gjb8114-r-1-7-14",
+  "diagnostic": "禁止同一表达式中调用多个相关函数",
+  "passed": 20,
+  "total": 20,
+  "negatives": 10,
+  "positives": 10,
+  "failures": [],
+  "source": "result-exp/03-gpt55/csa/dependent-call-in-expr/augmentation/accepted_versions/version_3/checker.cpp",
+  "plugin": "result-exp/03-gpt55/csa/dependent-call-in-expr/augmentation/accepted_versions/version_3/plugin.so"
+}

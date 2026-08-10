@@ -1,0 +1,14 @@
+{
+  "rule": "no-else-branch",
+  "checker": "GeneratedNoElseBranchChecker",
+  "frontend": "gjb8114.NoElseBranch",
+  "rule_id": "gjb8114-r-1-4-1",
+  "diagnostic": "禁止省略 if-else if 语句的 else 分支",
+  "passed": 20,
+  "total": 20,
+  "negatives": 10,
+  "positives": 10,
+  "failures": [],
+  "source": "result-exp/03-gpt55/csa/no-else-branch/first_checker/generated_checker.cpp",
+  "plugin": "result-exp/03-gpt55/csa/no-else-branch/first_checker/negative_case_1/round_1/workspace/GeneratedNoElseBranchChecker.so"
+}

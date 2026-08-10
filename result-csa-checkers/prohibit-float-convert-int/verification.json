@@ -1,0 +1,14 @@
+{
+  "rule": "prohibit-float-convert-int",
+  "checker": "GeneratedProhibitFloatConvertIntChecker",
+  "frontend": "gjb8114.ProhibitFloatConvertInt",
+  "rule_id": "gjb8114-r-1-10-1",
+  "diagnostic": "禁止浮点数变量赋给整型变量",
+  "passed": 20,
+  "total": 20,
+  "negatives": 10,
+  "positives": 10,
+  "failures": [],
+  "source": "result-exp/03-gpt55/csa/prohibit-float-convert-int/augmentation/accepted_versions/version_2/checker.cpp",
+  "plugin": "result-exp/03-gpt55/csa/prohibit-float-convert-int/augmentation/accepted_versions/version_2/plugin.so"
+}
