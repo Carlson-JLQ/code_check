@@ -1,4 +1,0 @@
-/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_2/round_1/workspace/GeneratedNoElseBranchChecker.cpp:67:18: error: no member named 'getDeclWithIssue' in 'clang::ento::BugReporter'
-   67 |               BR.getDeclWithIssue(D));
-      |               ~~ ^
-1 error generated.

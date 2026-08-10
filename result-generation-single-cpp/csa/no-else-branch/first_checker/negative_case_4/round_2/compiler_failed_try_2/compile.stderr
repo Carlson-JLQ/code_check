@@ -1,4 +1,0 @@
-/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_4/round_2/workspace/GeneratedNoElseBranchChecker.cpp:50:71: error: no member named 'getErrorNode' in 'clang::ento::BugReporter'
-   50 |               BT, "禁止省略 if-else if 语句的 else 分支", BR.getErrorNode());
-      |                                                           ~~ ^
-1 error generated.

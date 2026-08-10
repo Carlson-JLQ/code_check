@@ -1,4 +1,0 @@
-/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_1/round_2/workspace/GeneratedNoElseBranchChecker.cpp:37:34: error: no member named 'getMaxAnonymousCallPathLength' in 'clang::ento::BugReporter'
-   37 |         if (ExplodedNode *N = BR.getMaxAnonymousCallPathLength() >= 0 ? nullptr : nullptr) {
-      |                               ~~ ^
-1 error generated.

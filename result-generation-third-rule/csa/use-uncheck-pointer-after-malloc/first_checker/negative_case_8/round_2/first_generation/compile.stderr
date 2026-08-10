@@ -1,7 +1,0 @@
-/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_8/round_2/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:174:30: error: incompatible pointer types assigning to 'const Expr *' from 'const Stmt *'
-  174 |             Info.AllocExpr = S;
-      |                              ^
-/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_8/round_2/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:196:31: error: incompatible pointer types assigning to 'const Expr *' from 'const Stmt *'
-  196 |             Info->AllocExpr = S;
-      |                               ^
-2 errors generated.

@@ -1,7 +1,0 @@
-/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_7/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:235:74: error: cannot initialize a parameter of type 'const Expr *' with an lvalue of type 'const Stmt *'
-  235 |           if (PS.Allocated && !PS.Reported && isSimpleNullCheckCondition(Cond, VD))
-      |                                                                          ^~~~
-/home/checker/code_check/result-generation-third-rule/csa/use-uncheck-pointer-after-malloc/first_checker/negative_case_7/round_1/workspace/GeneratedUseUncheckPointerAfterMallocChecker.cpp:97:54: note: passing argument to parameter 'Cond' here
-   97 |   static bool isSimpleNullCheckCondition(const Expr *Cond, const VarDecl *VD) {
-      |                                                      ^
-1 error generated.

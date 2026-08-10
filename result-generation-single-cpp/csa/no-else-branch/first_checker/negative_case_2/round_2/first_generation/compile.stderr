@@ -1,7 +1,0 @@
-/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_2/round_2/workspace/GeneratedNoElseBranchChecker.cpp:95:12: error: no member named 'getBugReporter' in 'clang::ento::BugReporter'
-   95 |         BR.getBugReporter().getSourceManager().getLocForEndOfFile(
-      |         ~~ ^
-/home/checker/code_check/result-generation-single-cpp/csa/no-else-branch/first_checker/negative_case_2/round_2/workspace/GeneratedNoElseBranchChecker.cpp:96:16: error: no member named 'getBugReporter' in 'clang::ento::BugReporter'
-   96 |             BR.getBugReporter().getSourceManager().getMainFileID()));
-      |             ~~ ^
-2 errors generated.
